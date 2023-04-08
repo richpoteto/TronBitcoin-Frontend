@@ -838,6 +838,18 @@ const nftSlice = createSlice({
         state.loading = false;
         console.log(error);
       })
+      // ////////////
+      // .addCase(withDraw.pending, (state, action) => {
+      //   state.loading = true;
+      // })
+      // .addCase(withDraw.fulfilled, (state, action) => {
+      //   state.update = !state.update;
+      //   state.loading = false;
+      // })
+      // .addCase(withDraw.rejected, (state, { error }) => {
+      //   state.loading = false;
+      //   console.log(error);
+      // })
   },
 });
 
