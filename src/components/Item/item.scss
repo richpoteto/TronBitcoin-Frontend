@@ -1,0 +1,19 @@
+.slick-container {
+    padding: 0 8px;
+
+    .item-container {
+        position: relative;
+        border-radius: 8px;
+        background-color: #fff;
+    }
+
+    .favorite-icon {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}

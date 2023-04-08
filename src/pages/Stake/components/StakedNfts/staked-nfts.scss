@@ -1,0 +1,14 @@
+.staked-nfts-content {
+    padding: 32px 24px;
+    border-radius: 16px;
+
+    .table-container {
+        overflow-x: auto;
+        border: 3px solid #22274f;
+        border-radius: 16px;
+    }
+
+    .nfts-sort {
+        min-width: 260px;
+    }
+}

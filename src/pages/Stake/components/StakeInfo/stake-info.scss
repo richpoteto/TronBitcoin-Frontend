@@ -1,0 +1,38 @@
+.stake-info-container {
+    .card-info {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        background-color: #fff;
+        border: 5px solid #f59b2f;
+        border-radius: 8px;
+        padding: 16px 24px;
+
+        @media (min-width: 900px) {
+            flex-wrap: nowrap;
+        }
+
+        &-item {
+            width: 100%;
+
+            @media (min-width: 600px) {
+                width: 45%;
+            }
+
+            @media (min-width: 900px) {
+                width: 25%;
+            }
+
+            &-title {
+                font-family: Audiowide;
+                white-space: nowrap;
+                margin-bottom: 8px;
+            }
+
+            &-value {
+                font-family: Audiowide;
+                font-size: 14px;
+            }
+        }
+    }
+}
