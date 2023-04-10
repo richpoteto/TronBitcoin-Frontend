@@ -22,13 +22,15 @@ const Mining = () => {
 
   const [spins, setSpins] = useState<Array<number>>([]);
 
+  const [spinActive, setSpinActive] = useState(false);
+
   const [messages, setMessages] = useState<Array<string>>([]);
 
   const address = useAddress();
 
   const [ws, setWs] = useState<WebSocket | null>(null);
 
-  const userInfo = useSelector<IReduxState, { newtrons: number, protons: number, spins : number }>(state => {
+  const userInfo = useSelector<IReduxState, { newtrons: number, protons: number, spins: number }>(state => {
     return state.nft.userInfo
   });
 
@@ -53,8 +55,13 @@ const Mining = () => {
   useEffect(() => {
     if (spin) {
       let prevSpins: string[] = JSON.parse(localStorage.getItem("spins") || "[]");
+      if (prevSpins.length > 10) prevSpins.pop();
       localStorage.setItem("spins", JSON.stringify([spin, ...prevSpins]));
-      setSpins(prevSpins => [spin, ...prevSpins]);
+
+      setSpins(_prevSpins => {
+        if (_prevSpins.length > 10) _prevSpins.pop();
+        return [spin, ..._prevSpins];
+      });
     }
   }, [spin])
 
@@ -67,8 +74,12 @@ const Mining = () => {
 
     newWs.onmessage = (event) => {
       let prevMessages: string[] = JSON.parse(localStorage.getItem("messages") || "[]");
+      if (prevMessages.length > 10) prevMessages.pop();
       localStorage.setItem("messages", JSON.stringify([event.data, ...prevMessages]));
-      setMessages(prevMessages => [event.data, ...prevMessages]);
+      setMessages(prevMessages => {
+        if (prevMessages.length > 10) prevMessages.pop();
+        return [event.data, ...prevMessages];
+      });
     };
 
     newWs.onerror = (event) => {
@@ -108,15 +119,18 @@ const Mining = () => {
     )
   }
 
-  async function _spinNft() {
-    await dispatch(
+  async function _spinNft(s : number) {
+    let spinStatus = await dispatch(
       spinNft({
         provider,
         networkID: chainID,
-        value: spin,
+        value: s,
         walletAddress: address
       })
-    )
+    );
+    if (spinStatus.meta.requestStatus === 'fulfilled') {
+      setSpinActive(true);
+    }
   }
 
   async function _getUserInfo() {
@@ -208,7 +222,7 @@ const Mining = () => {
                   8082 TRX
                 </Typography>
               </Box>
-              <Wheel onSpin={setSpin} onClick={_spinNft} />
+              <Wheel isActive={spinActive} setActive={setSpinActive} spin={spin} onSpin={setSpin} onClick={_spinNft} />
               <Box
                 className="spin-action"
                 sx={{ backgroundColor: "common.black" }}

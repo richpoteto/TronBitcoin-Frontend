@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Box } from "@mui/material";
 
 import "./wheel.scss";
@@ -17,45 +17,73 @@ const colors = [
 ];
 
 type wheelProps = {
-  onSpin : (i : number) => void,
-  onClick : () => void
+  isActive: boolean,
+  spin: number,
+  onSpin: (i: number) => void,
+  onClick: (s: number) => void,
+  setActive: (i: boolean) => void
 }
 
-const Wheel = ({onSpin, onClick} : wheelProps) => {
-  const [selectedItem, setSelectedItem] = useState<number | null>(null);
+const Wheel = ({ onSpin, onClick, isActive, spin, setActive }: wheelProps) => {
+  const [angle, setAngle] = useState<number>(-90);
+  const [number, setNumber] = useState(1);
 
+  const getA = () => {
+    let total = 360 * 10;
+    total += spin < number ? 36 * (number - spin) : 36 * (10 - spin + number);
 
-  const selectItem = () => {
-    let selected: number | null = null;
-    let interval = setInterval(() => {
-      selected = Math.floor(Math.random() * 10);
-      setSelectedItem(selected);
-    }, 100);
+    return total / 4.5;
+  }
 
-    setTimeout(() => {
-      console.log(selected);
-      if (selected) {
-        onSpin(selected);
-        onClick();
+  const selectClick = () => {
+    if (!isActive) {
+      let selected = Math.floor(Math.random() * 10) + 1;
+      onSpin(selected);
+      onClick(selected);
+    }
+  }
+
+  useEffect(() => {
+    if (isActive) {
+      console.log(number, spin, 99999999);
+      let time = 0;
+      const interval = setInterval(() => {
+        const delta = 0.3 * getA() - 0.5 * getA() * (0.2 * time + 0.01);
+
+        setAngle(prevAngle => {
+          console.log(prevAngle, (3 - time) * getA(), 11111);
+          return prevAngle + delta;
+        }
+        );
+        time += 0.1;
+      }, 100);
+
+      const timeout = setTimeout(() => {
+        setNumber(spin);
+        setActive(false);
+        clearInterval(interval);
+      }, 3000);
+
+      return () => {
+        clearInterval(interval);
+        clearTimeout(timeout);
       }
-      clearInterval(interval);
-    }, 3000);
-  };
+
+    }
+  }, [isActive, setAngle, spin]);
 
   return (
-    <Box className="wheel-container" onClick={selectItem}>
+    <Box className="wheel-container" onClick={selectClick}>
       <Box
         className="wheel"
         sx={{
           backgroundColor: "primary.light",
           transition:
-            selectedItem !== null
+            isActive
               ? "transform 4s"
               : "transition: transform 0.25s",
           transform:
-            selectedItem !== null
-              ? `rotate(calc(5 * 360deg - 90deg + (-36deg * ${selectedItem})))`
-              : "rotate(-90deg)",
+            "rotate(" + angle + "deg)"
         }}
       >
         {Array.from(Array(10)).map((_, index: number) => (

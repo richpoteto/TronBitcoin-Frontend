@@ -81,7 +81,6 @@ const WhitelistedNfts = () => {
   }
 
   const getAvailableNfts = () => {
-    console.log(555555555);
     axios.get(`http://localhost:8001/api/nft/ids?address=${walletAddress}`).then((res) => {
       if (res.data) {
         getApproveNFTs(res.data);

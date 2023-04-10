@@ -200,7 +200,6 @@ export const getMps = createAsyncThunk(
         return metamaskErrorWrap(err, dispatch);
       }
     }));
-    console.log(mps, 44444444444);
     return { mps };
   }
 );
@@ -294,7 +293,6 @@ export const getStakedNftsFromUser = createAsyncThunk(
         claimable: nft.claimable
       }
     });
-    console.log("222222222222222", StakedNftsFromUser);
     return { StakedNftsFromUser };
   }
 );
@@ -335,7 +333,6 @@ export const getStakedNfts = createAsyncThunk(
         claimable: nft.claimable
       }
     })
-    console.log("1111111111111111111", StakedNfts);
     return { StakedNfts };
   }
 );
@@ -379,8 +376,8 @@ export const stakeNft = createAsyncThunk(
       enterTx = await mainContract.stakeNFT(address, tokenId);
 
       await enterTx.wait();
-
-      BroadcastMessage(walletAddress + " staked tokenId " + tokenId + " at NFT collection " + address);
+      
+      BroadcastMessage(`${walletAddress.slice(0,4)}...${walletAddress.slice(-4)}` + " staked tokenId " + tokenId + " at NFT collection " + `${address.slice(0,4)}...${address.slice(-4)}`);
       return;
     } catch (err: any) {
       console.error("Transaction error:", err);
@@ -434,7 +431,7 @@ export const unStakeNft = createAsyncThunk(
 
       await enterTx.wait();
 
-      BroadcastMessage(walletAddress + " unstaked tokenId " + tokenId + " at NFT collection " + address);
+      BroadcastMessage(`${walletAddress.slice(0,4)}...${walletAddress.slice(-4)}` + " unstaked tokenId " + tokenId + " at NFT collection " + `${address.slice(0,4)}...${address.slice(-4)}`);
     
       return;
     } catch (err: any) {
@@ -493,7 +490,7 @@ export const claimNft = createAsyncThunk(
       if (status.message) {
         alert(status.message);
       } else {
-        BroadcastMessage(walletAddress + " claimed " + status.claimedNewtrons + "Newtron tokens!");
+        BroadcastMessage(`${walletAddress.slice(0,4)}...${walletAddress.slice(-4)}` + " claimed " + status.claimedNewtrons + "Newtron tokens!");
       }
       return;
     } catch (err: any) {
@@ -546,7 +543,7 @@ export const claimAll = createAsyncThunk(
       const status = await mainContract.getStatus();
 
       if (status.claimedNewtrons) {
-        BroadcastMessage(walletAddress + " claimed " + status.claimedNewtrons + "Newtron tokens!");
+        BroadcastMessage(`${walletAddress.slice(0,4)}...${walletAddress.slice(-4)}` + " claimed " + status.claimedNewtrons + "Newtron tokens!");
       }
       return;
     } catch (err: any) {
@@ -597,7 +594,7 @@ export const withDraw = createAsyncThunk(
       await enterTx.wait();
 
       const status = await mainContract.getStatus();
-      BroadcastMessage(walletAddress + " withdrawed " + status.claimedNewtrons + "Newtron tokens and " + status.claimedProtons + "Proton tokens!");
+      BroadcastMessage(`${walletAddress.slice(0,4)}...${walletAddress.slice(-4)}` + " withdrawed " + status.claimedNewtrons + "Newtron tokens and " + status.claimedProtons + "Proton tokens!");
       return;
     } catch (err: any) {
       console.error("Transaction error:", err);
@@ -652,7 +649,7 @@ export const spinNft = createAsyncThunk(
       const status = await mainContract.getStatus();
 
       if (status.spin) {
-        BroadcastMessage(walletAddress + " just hit the 7 on spin and get 1 proton token!");
+        BroadcastMessage(`${walletAddress.slice(0,4)}...${walletAddress.slice(-4)}` + " just hit the 7 on spin and get 1 proton token!");
         if (status.jackpot && status.message) {
           BroadcastMessage(status.message);
         }
