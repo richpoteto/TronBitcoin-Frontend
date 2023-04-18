@@ -6,7 +6,7 @@ import { useWeb3React } from "@web3-react/core";
 import NftImage from "assets/images/item/1 snowman epiphany.png";
 import { claimNft, unStakeNft } from "store/slice/nft-slice";
 import { getDayFromTimestamp, getHourFromTimestamp } from "utils/getDate";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type StakedNftItemProps = {
   stakedDate: number,
@@ -20,12 +20,19 @@ type StakedNftItemProps = {
 const StakedNftItem = ({ address, id, mp, claimable, stakedDate, newtrons }: StakedNftItemProps) => {
   const [walletAddress, setWallet] = useState("");
   const [disable, setDisable] = useState(false);
+  const isMounted = useRef(true);
 
   const dispatch = useDispatch<AppDispatch>();
   const { account } = useWeb3React();
 
   const day = getDayFromTimestamp(stakedDate);
   const hour = getHourFromTimestamp(stakedDate);
+
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (account && account !== "") {
@@ -41,6 +48,7 @@ const StakedNftItem = ({ address, id, mp, claimable, stakedDate, newtrons }: Sta
         tokenId: id
       })
     )
+    
   }
 
   async function _claimNft() {
@@ -51,7 +59,8 @@ const StakedNftItem = ({ address, id, mp, claimable, stakedDate, newtrons }: Sta
         walletAddress
       })
     );
-    if (result.meta.requestStatus === 'fulfilled') {
+    if (isMounted.current && result.meta.requestStatus === 'fulfilled') {
+      console.log(disable, 11111);
       setDisable(true);
     }
   }
@@ -59,11 +68,12 @@ const StakedNftItem = ({ address, id, mp, claimable, stakedDate, newtrons }: Sta
   useEffect(() => {
     if (disable) {
       setTimeout(() => {
-        setDisable(false);
+        if (isMounted.current) {
+          setDisable(false);
+        }
       }, 4 * 60 * 1000);
     }
-  }
-    , [disable])
+  }, [disable]);
 
   return (
     <>
@@ -114,6 +124,9 @@ const StakedNftItem = ({ address, id, mp, claimable, stakedDate, newtrons }: Sta
             <Button variant="contained" sx={{ mr: "8px" }} onClick={_unStakeNft}>
               Unstake
             </Button>
+            {
+              console.log(disable, 222)
+            }
             <Button
               variant="contained"
               onClick={_claimNft}
