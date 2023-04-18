@@ -4,87 +4,19 @@ import { useWeb3Context, useAddress } from "hooks";
 import { AppDispatch } from "state";
 import "./stake-info.scss";
 import { IReduxState } from "store/slice/state.interface";
-import { getStakedNfts, getStakedNftsFromUser, getStatus } from "store/slice/nft-slice";
-import { useEffect } from "react";
+import { getStakedNftsFromUser, getStatus } from "store/slice/nft-slice";
+import { useEffect, useState } from "react";
+import { useWeb3React } from "@web3-react/core";
+import { BigNumber } from "ethers";
 
-const StakeInfo = () => {
-  const dispatch = useDispatch<AppDispatch>();
-
-  const { provider, chainID, connected, connect } = useWeb3Context();
-
-  const address = useAddress();
-
-  const stakedNfts = useSelector<IReduxState, Array<{ collection: string, tokenId: number, newtrons: number, protons: number, mp: number, stakedTimeStamp: number, claimedTimeStamp: number, claimable: boolean }>>(state => {
-    if (state.nft) {
-      return state.nft.StakedNfts;
-    }
-    return [];
-  });
-
-  const stakedNftsFromUser = useSelector<IReduxState, Array<{ collection: string, tokenId: number, newtrons: number, protons: number, mp: number, stakedTimeStamp: number, claimedTimeStamp: number, claimable: boolean }>>(state => {
-    if (state.nft) {
-      return state.nft.StakedNftsFromUser;
-    }
-    return [];
-  });
-
+interface IStakeInfo {
+  globalNfts : number,
+  userNfts : number
+}
+const StakeInfo = ({globalNfts, userNfts} : IStakeInfo) => {
   const status = useSelector<IReduxState, { totalNewTrons: number, totalProtons: number }>(state => {
     return state.nft.status
   });
-
-  const update = useSelector<IReduxState, Boolean>(state => {
-    return state.nft.update
-  })
-
-  const realStakedNfts = stakedNfts.map((nft, index) => {
-    if (parseInt(nft.collection)) {
-      return 1;
-    } else {
-      return 0;
-    }
-  }
-  )
-    .filter((nft) => nft !== 0);
-
-  async function _getStakedNfts() {
-    await dispatch(
-      getStakedNfts({
-        provider,
-        networkID: chainID,
-      })
-    )
-  }
-
-  async function _getStakedNftsFromUser() {
-    await dispatch(
-      getStakedNftsFromUser({
-        provider,
-        networkID: chainID,
-        walletAddress : address
-      })
-    )
-  }
-
-  async function _getStatus() {
-    await dispatch(
-      getStatus({
-        provider,
-        networkID: chainID
-      })
-    )
-  }
-
-  useEffect(() => {
-    _getStakedNfts();
-    _getStakedNftsFromUser();
-    _getStatus();
-  }, [connect]);
-
-  useEffect(() => {
-      _getStakedNfts();
-      _getStakedNftsFromUser();
-      _getStatus();
-  }, [update]);
 
   return (
     <Box
@@ -130,7 +62,7 @@ const StakeInfo = () => {
                 className="card-info-item-value"
                 color="secondary.main"
               >
-                {realStakedNfts.length}
+                {globalNfts}
               </Typography>
             </Box>
             <Box className="card-info-item">
@@ -141,7 +73,7 @@ const StakeInfo = () => {
                 className="card-info-item-value"
                 color="secondary.main"
               >
-                {stakedNftsFromUser.length} NFT's
+                {userNfts} NFT's
               </Typography>
             </Box>
             <Box className="card-info-item">

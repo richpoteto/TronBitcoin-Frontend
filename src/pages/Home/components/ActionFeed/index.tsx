@@ -53,22 +53,11 @@ const settings = {
 };
 
 interface IActionFeed {
-  nfts: Array<any>
+  nfts: Array<any>,
+  messages : Array<string>
 }
 
-const ActionFeed = ({ nfts }: IActionFeed) => {
-  const dispatch = useDispatch<AppDispatch>();
-  const [ws, setWs] = useState<WebSocket | null>(null);
-
-  const [messages, setMessages] = useState<Array<string>>([]);
-
-  useEffect(() => {
-    const prevMessages = localStorage.getItem("messages");
-    if (prevMessages) {
-      setMessages(JSON.parse(prevMessages));
-    }
-  }, [])
-
+const ActionFeed = ({ nfts, messages }: IActionFeed) => {
   const showNfts = nfts.map((nft, index) => {
     if (parseInt(nft.collection)) {
       return {
@@ -179,7 +168,7 @@ const ActionFeed = ({ nfts }: IActionFeed) => {
         </Typography>
         <Box
           className="slider-content"
-          sx={{ backgroundColor: "primary.light" }}
+          sx={{ backgroundColor: "primary.light", height : 300}}
         >
           <Slider {...settings}>
             {

@@ -21,10 +21,11 @@ type wheelProps = {
   spin: number,
   onSpin: (i: number) => void,
   onClick: (s: number) => void,
-  setActive: (i: boolean) => void
+  setActive: (i: boolean) => void,
+  setSpinShow : (i : boolean) => void
 }
 
-const Wheel = ({ onSpin, onClick, isActive, spin, setActive }: wheelProps) => {
+const Wheel = ({ onSpin, onClick, isActive, spin, setActive, setSpinShow }: wheelProps) => {
   const [angle, setAngle] = useState<number>(-90);
   const [number, setNumber] = useState(1);
 
@@ -40,18 +41,17 @@ const Wheel = ({ onSpin, onClick, isActive, spin, setActive }: wheelProps) => {
       let selected = Math.floor(Math.random() * 10) + 1;
       onSpin(selected);
       onClick(selected);
+      setSpinShow(false);
     }
   }
 
   useEffect(() => {
     if (isActive) {
-      console.log(number, spin, 99999999);
       let time = 0;
       const interval = setInterval(() => {
         const delta = 0.3 * getA() - 0.5 * getA() * (0.2 * time + 0.01);
 
         setAngle(prevAngle => {
-          console.log(prevAngle, (3 - time) * getA(), 11111);
           return prevAngle + delta;
         }
         );
@@ -61,6 +61,7 @@ const Wheel = ({ onSpin, onClick, isActive, spin, setActive }: wheelProps) => {
       const timeout = setTimeout(() => {
         setNumber(spin);
         setActive(false);
+        setSpinShow(true);
         clearInterval(interval);
       }, 3000);
 

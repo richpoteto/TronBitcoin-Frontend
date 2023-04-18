@@ -10,14 +10,16 @@ import AboutUs from "./components/AboutUs";
 import GrandDesign from "./components/GrandDesign";
 import RoadMap from "./components/RoadMap";
 import TicketManagement from "./components/TicketManagement";
-import { useWeb3Context, useAddress } from "hooks";
+import { useWeb3React } from "@web3-react/core";
 import { IReduxState } from "store/slice/state.interface";
 import { getStakedNfts } from "store/slice/nft-slice";
 
-const Home = () => {
-  const dispatch = useDispatch<AppDispatch>();
-  const { provider, chainID, connected, connect } = useWeb3Context();
 
+interface IHome {
+  messages : Array<string>
+}
+
+const Home = ({messages} : IHome) => {
   const stakedNfts = useSelector<IReduxState, Array<{collection : string, tokenId : number, newtrons : number, protons : number, mp : number, stakedTimeStamp : number, claimedTimeStamp : number, claimable : boolean}>>(state => {
     if (state.nft) {
       return state.nft.StakedNfts;
@@ -25,30 +27,16 @@ const Home = () => {
     return [];
   });
 
+  const _rareNfts = useSelector<IReduxState, Array<{collection : string, tokenId : number, newtrons : number, protons : number, mp : number, stakedTimeStamp : number, claimedTimeStamp : number, claimable : boolean}>>(state => {
+    if (state.nft) {
+      return state.nft.rareNfts;
+    }
+    return [];
+  });
+
   const recentNfts = stakedNfts.slice().sort((a, b) => a.stakedTimeStamp - b.stakedTimeStamp);
 
-  const rareNfts = stakedNfts.slice().sort((a, b) => a.mp - b.mp);
-
-  const update = useSelector<IReduxState, Boolean>(state => {
-    return state.nft.update
-  })
-
-  async function _getStakedNfts() {
-    await dispatch(
-      getStakedNfts({
-        provider,
-        networkID: chainID,
-      })
-    )
-  }
-
-  useEffect(() => {
-    _getStakedNfts();
-  }, [connect]);
-
-  useEffect(() => {
-    _getStakedNfts();
-  }, [update]);
+  const rareNfts = _rareNfts.slice().sort((a, b) => a.mp - b.mp);
 
   return (
     <Box sx={{ backgroundColor: "common.black" }}>
@@ -79,7 +67,7 @@ const Home = () => {
             Stake NFT's
           </Button>
         </Box>
-        <ActionFeed nfts = {rareNfts}/>
+        <ActionFeed nfts = {rareNfts} messages={messages}/>
         <ActionList nfts = {recentNfts}/>
       </Container>
       <AboutUs />

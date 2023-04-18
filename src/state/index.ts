@@ -8,6 +8,7 @@ import transactions from "./transactions/reducer";
 import multicall from "./multicall/reducer";
 import nftReducer from "../store/slice/nft-slice";
 import feedsReducer from "../store/slice/feeds-slice";
+import messagesReducer from "../store/slice/messages-slice";
 
 const PERSISTED_KEYS: string[] = ["user", "transactions", "lists"];
 
@@ -19,6 +20,7 @@ const store = configureStore({
     multicall,
     nft : nftReducer,
     feeds : feedsReducer,
+    messages : messagesReducer
   },
   middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }),
   preloadedState: load({ states: PERSISTED_KEYS }),

@@ -2,15 +2,9 @@ import { useState, useEffect } from "react";
 import { Box, Container, Typography, Table, TableBody } from "@mui/material";
 import Select from "react-select";
 import StakedNftItem from "./StakedNftItem";
-import { useAddress, useWeb3Context } from "../../../../hooks";
 import { AppDispatch } from "state";
 import { useDispatch } from "react-redux";
-import { useSelector } from "react-redux";
 import "./staked-nfts.scss";
-import { getStakedNftsFromUser } from "store/slice/nft-slice";
-import { IReduxState } from "store/slice/state.interface";
-import getDateFromTimestamp from "utils/getDate";
-import { BigNumber } from "ethers";
 
 const options = [
   { value: "All NFT's", label: "All NFT's" },
@@ -40,56 +34,20 @@ const options = [
   { value: "Baked Bulls", label: "Baked Bulls" },
 ];
 
-const StakedNfts = () => {
-  const dispatch = useDispatch<AppDispatch>();
+interface IStakedNfts {
+  nftsOfUser : any[]  
+}
 
+const StakedNfts = ({nftsOfUser} : IStakedNfts) => {
   const [selectedOption, setSelectedOption] = useState<any>({
     value: "All NFT's",
     label: "All NFT's",
   });
 
-  const { connect } = useWeb3Context();
-  
-  const stakedNftFromUser = useSelector<IReduxState, Array<{collection : string, tokenId : number, newtrons : number, protons : number, mp : number, stakedTimeStamp : number, claimedTimeStamp : number, claimable : boolean}>>(state => {
-    if (state.nft) {
-      return state.nft.StakedNftsFromUser;
-    }
-    return [];
-  });
-
-  const update = useSelector<IReduxState, Boolean>(state => {
-    return state.nft.update
-  })
-
-  const address = useAddress();
-
-  const { provider, chainID, connected } = useWeb3Context();
-
-  async function getCurrentlyStakedNfts(address : string) {
-    await dispatch(
-      getStakedNftsFromUser({
-        provider,
-        networkID: chainID,
-        walletAddress : address
-      })
-    )
-  }
-
-  useEffect(() => {
-    if (address) {
-      getCurrentlyStakedNfts(address);
-    }
-  }, [connect]);
-
-  useEffect(() => {
-    if (address) {
-      getCurrentlyStakedNfts(address);
-    }
-  }, [update]);
-
   const handleChange = (selectedOption: any) => {
     setSelectedOption(selectedOption);
   };
+  
   return (
     <Box sx={{ backgroundColor: "common.black" }}>
       <Container maxWidth="xl" sx={{ py: "24px" }}>
@@ -126,9 +84,11 @@ const StakedNfts = () => {
           <Box className="table-container">
             <Table sx={{ minWidth: 950 }}>
               <TableBody>
-                {stakedNftFromUser.map((nft, key) => (
-                  <StakedNftItem key={key} address={nft.collection} id={nft.tokenId} stakedDate={getDateFromTimestamp(nft.stakedTimeStamp)} newtrons={nft.newtrons}/>
-                ))}
+                {
+                  nftsOfUser.map((nft, key) => (
+                    nft.mp && <StakedNftItem key={key} address={nft.collection} claimable ={nft.claimable} id={nft.tokenId} mp ={nft.mp} stakedDate={nft.stakedTimeStamp} newtrons={nft.newtrons}/>
+                  ))
+                }
               </TableBody>
             </Table>
           </Box>

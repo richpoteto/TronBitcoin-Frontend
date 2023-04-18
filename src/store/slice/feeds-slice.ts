@@ -1,5 +1,4 @@
 import { BigNumber, ethers } from "ethers";
-import { getAddresses, Networks } from "../../constants";
 import {
   createSlice,
   createSelector,

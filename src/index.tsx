@@ -1,4 +1,5 @@
 import ReactDOM from "react-dom";
+import React from "react";
 import { HashRouter } from "react-router-dom";
 import { createWeb3ReactRoot, Web3ReactProvider } from "@web3-react/core";
 import { Provider } from "react-redux";
@@ -32,24 +33,21 @@ function Updaters() {
 }
 
 ReactDOM.render(
-  <Web3ReactProvider getLibrary={getLibrary}>
-    <Web3ProviderNetwork getLibrary={getLibrary}>
-      <Provider store={store}>
-        <ThemeProvider>
-          <HashRouter>
-            <Updaters />
-            <Web3ContextProvider>
-              <App />
-            </Web3ContextProvider>
-          </HashRouter>
-        </ThemeProvider>
-      </Provider>
-    </Web3ProviderNetwork>
-  </Web3ReactProvider>,
+      <Web3ReactProvider getLibrary={getLibrary}>
+        <Web3ProviderNetwork getLibrary={getLibrary}>
+          <Provider store={store}>
+            <ThemeProvider>
+              <HashRouter>
+                <Updaters />
+                <Web3ContextProvider>
+                  <App />
+                </Web3ContextProvider>
+              </HashRouter>
+            </ThemeProvider>
+          </Provider>
+        </Web3ProviderNetwork>
+      </Web3ReactProvider>,
   document.getElementById("root") as HTMLElement
 );
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
 reportWebVitals();

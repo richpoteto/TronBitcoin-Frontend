@@ -1,17 +1,18 @@
-const getYear = (timestamp: number) => {
-    return Math.floor(timestamp / 31536000) + 1970;
+
+export const getDayFromTimestamp = (timeStamp : number) => {
+    var date = new Date(timeStamp * 1000);
+    var year = date.getFullYear();
+    var month = "0" + (date.getMonth() + 1);
+    var day = "0" + date.getDate();
+
+    return year + ":" + month + ":" + day;
 }
 
-const getMonth = (timestamp: number) => {
-    return Math.floor(timestamp % 31536000 / 2629744) + 1;
-}
+export const getHourFromTimestamp = (timeStamp : number) => {
+    var date = new Date(timeStamp * 1000);
+    var hours = date.getHours();
+    var minutes = date.getMinutes();
+    var seconds = date.getSeconds();
 
-const getDay = (timestamp: number) => {
-    return Math.floor(timestamp % 31536000 % 2629744 / 86400) + 1;
+    return hours + ":" + minutes + ":" + seconds;
 }
-
-const getDateFromTimestamp = (timeStamp : number) => {
-    return getYear(timeStamp) + ": " + getMonth(timeStamp) + ": " + getDay(timeStamp);
-}
-
-export default getDateFromTimestamp;

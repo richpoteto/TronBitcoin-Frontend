@@ -5,18 +5,18 @@ import Wheel from "components/Wheel";
 import { AppDispatch } from "state";
 import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
-import { useAddress, useWeb3Context } from "../../../../hooks";
 import "./mining.scss";
 import BackgroundImage from "assets/images/stake_background.png";
-import { claimAll, getStatus, getUserInfo, spinNft, withDraw } from "store/slice/nft-slice";
+import { claimAll, spinNft, withDraw } from "store/slice/nft-slice";
 import { useSelector } from "react-redux";
 import { IReduxState } from "store/slice/state.interface";
-import { setFeeds } from "store/slice/feeds-slice";
+import { useWeb3React } from "@web3-react/core";
 
-const Mining = () => {
+interface IMining {
+  messages : Array<string>
+}
+const Mining = ({messages} : IMining) => {
   const dispatch = useDispatch<AppDispatch>();
-
-  const { provider, chainID, connected, connect } = useWeb3Context();
 
   const [spin, setSpin] = useState(0);
 
@@ -24,22 +24,43 @@ const Mining = () => {
 
   const [spinActive, setSpinActive] = useState(false);
 
-  const [messages, setMessages] = useState<Array<string>>([]);
+  const [spinShow, setSpinShow] = useState(false);
 
-  const address = useAddress();
-
-  const [ws, setWs] = useState<WebSocket | null>(null);
+  const { account } = useWeb3React();
 
   const userInfo = useSelector<IReduxState, { newtrons: number, protons: number, spins: number }>(state => {
     return state.nft.userInfo
   });
 
-  useEffect(() => {
-    const prevMessages = localStorage.getItem("messages");
-    if (prevMessages) {
-      setMessages(JSON.parse(prevMessages));
-    }
+  async function _claimAll() {
+    await dispatch(
+      claimAll({
+        walletAddress: account
+      })
+    )
+  }
 
+  async function _withDraw() {
+    await dispatch(
+      withDraw({
+        walletAddress: account
+      })
+    )
+  }
+
+  async function _spinNft(s : number) {
+    let spinStatus = await dispatch(
+      spinNft({
+        value: s,
+        walletAddress: account
+      })
+    );
+    if (spinStatus.meta.requestStatus === 'fulfilled') {
+      setSpinActive(true);
+    }
+  }
+  
+  useEffect(() => {
     const prevSpins = localStorage.getItem("spins");
     if (prevSpins) {
       setSpins(JSON.parse(prevSpins));
@@ -47,13 +68,7 @@ const Mining = () => {
   }, []);
 
   useEffect(() => {
-    if (address) {
-      _getUserInfo();
-    }
-  }, [connect]);
-
-  useEffect(() => {
-    if (spin) {
+    if (spin && spinShow) {
       let prevSpins: string[] = JSON.parse(localStorage.getItem("spins") || "[]");
       if (prevSpins.length > 10) prevSpins.pop();
       localStorage.setItem("spins", JSON.stringify([spin, ...prevSpins]));
@@ -63,85 +78,7 @@ const Mining = () => {
         return [spin, ..._prevSpins];
       });
     }
-  }, [spin])
-
-  useEffect(() => {
-    const newWs = new WebSocket('ws://localhost:8001');
-
-    newWs.onopen = () => {
-      console.log('WebSocket connected');
-    };
-
-    newWs.onmessage = (event) => {
-      let prevMessages: string[] = JSON.parse(localStorage.getItem("messages") || "[]");
-      if (prevMessages.length > 10) prevMessages.pop();
-      localStorage.setItem("messages", JSON.stringify([event.data, ...prevMessages]));
-      setMessages(prevMessages => {
-        if (prevMessages.length > 10) prevMessages.pop();
-        return [event.data, ...prevMessages];
-      });
-    };
-
-    newWs.onerror = (event) => {
-      console.error('WebSocket error:', event);
-    };
-
-    newWs.onclose = () => {
-      console.log('WebSocket closed');
-    };
-
-    // Store the WebSocket connection in the component state
-    setWs(newWs);
-
-    // Clean up the WebSocket connection when the component unmounts
-    return () => {
-      newWs.close();
-    };
-  }, []);
-
-  async function _claimAll() {
-    await dispatch(
-      claimAll({
-        provider,
-        networkID: chainID,
-        walletAddress: address
-      })
-    )
-  }
-
-  async function _withDraw() {
-    await dispatch(
-      withDraw({
-        provider,
-        networkID: chainID,
-        walletAddress: address
-      })
-    )
-  }
-
-  async function _spinNft(s : number) {
-    let spinStatus = await dispatch(
-      spinNft({
-        provider,
-        networkID: chainID,
-        value: s,
-        walletAddress: address
-      })
-    );
-    if (spinStatus.meta.requestStatus === 'fulfilled') {
-      setSpinActive(true);
-    }
-  }
-
-  async function _getUserInfo() {
-    await dispatch(
-      getUserInfo({
-        provider,
-        networkID: chainID,
-        walletAddress: address
-      })
-    )
-  }
+  }, [spin, spinShow])
 
   return (
     <Box
@@ -189,7 +126,7 @@ const Mining = () => {
               </Typography>
               {
                 messages.map((message, index) =>
-                  <Typography variant="inherit" fontFamily="LucidaSans" mb="8px">
+                  <Typography key={index} variant="inherit" fontFamily="LucidaSans" mb="8px">
                     <Typography
                       component="span"
                       fontFamily="LucidaSans"
@@ -222,7 +159,7 @@ const Mining = () => {
                   8082 TRX
                 </Typography>
               </Box>
-              <Wheel isActive={spinActive} setActive={setSpinActive} spin={spin} onSpin={setSpin} onClick={_spinNft} />
+              <Wheel isActive={spinActive} setSpinShow={setSpinShow} setActive={setSpinActive} spin={spin} onSpin={setSpin} onClick={_spinNft} />
               <Box
                 className="spin-action"
                 sx={{ backgroundColor: "common.black" }}
@@ -233,7 +170,7 @@ const Mining = () => {
                   color="white"
                   mb="8px"
                 >
-                  Earned Spins: {spin}
+                  Earned Spins: {spinShow && spin}
                 </Typography>
               </Box>
             </Box>
@@ -332,20 +269,18 @@ const Mining = () => {
                     mt: { xs: "24px", sm: 0 },
                   }}
                 >
-                  <Typography color="white" fontSize="14px">
-                    Available: Mined: new{" "}
-                    {Intl.NumberFormat("en-US").format(userInfo.newtrons)}{" "}
+                  <Typography component = "div" color="white" fontSize="14px" >
+                    Available: new {userInfo.newtrons}
                     <Typography
-                      component="span"
+                      component="div"
                       color="primary.light"
                       fontSize="14px"
                     >
                       NEU
                     </Typography>
                   </Typography>
-                  <Typography color="white" fontSize="14px" mb="8px">
-                    Available: Mined: new{" "}
-                    {Intl.NumberFormat("en-US").format(userInfo.protons)}{" "}
+                  <Typography component = "div" color="white" fontSize="14px" mb="8px">
+                    Available: new {userInfo.protons}
                     <Typography
                       component="span"
                       color="secondary.main"
@@ -355,7 +290,7 @@ const Mining = () => {
                     </Typography>
                   </Typography>
                   <Button variant="contained" onClick={_withDraw}>
-                    Withdrawl
+                    Withdraw
                     <ArrowRightAltOutlinedIcon />
                   </Button>
                   <Typography

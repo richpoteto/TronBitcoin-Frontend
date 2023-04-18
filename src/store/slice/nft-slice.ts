@@ -1,64 +1,107 @@
-import { BigNumber, ethers } from "ethers";
-import { getAddresses, Networks } from "../../constants";
+import { ShataTestnet } from "../../constants";
 import {
   createSlice,
   createSelector,
   createAsyncThunk,
 } from "@reduxjs/toolkit";
-import {
-  JsonRpcProvider,
-  StaticJsonRpcProvider,
-} from "@ethersproject/providers";
 import { RootState } from "../../state";
 import { metamaskErrorWrap } from "helpers/metamask-error-wrap";
-import { messages } from "../../constants/messages";
-import { warning } from "./messages-slice";
 import { setAll } from "../../helpers/set-all";
-import nftABIs from "abis/nftABIs";
+import io from "socket.io-client";
 import whitelistNfts from "utils/whitelistNfts";
-import { mainABIS } from "abis";
+import tronWeb from 'tronweb';
+import { notification } from "utils/notification";
+
+declare var window: any
 
 const BroadcastMessage = async (message: string) => {
-  const ws = new WebSocket('ws://localhost:8001');
-
-  ws.onopen = () => {
-    ws.send(message);
-    console.log(message, "from frontend to backend");
-    ws.close();
-  };
-
-  ws.onerror = (error) => {
-    console.error(`WebSocket error: ${error}`);
-  };
+  var socket = io("http://localhost:8001");
+  socket.emit("message", { message });
 };
 
+const getTronAddress = (address: string) => {
+  return tronWeb.address.fromHex(address);
+}
+
+interface IGetNftsCount { }
+
+export const getNftsCount = createAsyncThunk(
+  'nft/getnftscount',
+  async ({ }: IGetNftsCount) => {
+    let mainContract;
+    if (window) {
+      if (window.tronWeb && window.tronWeb.defaultAddress.base58) {
+        mainContract = await window.tronWeb.contract().at(tronWeb.address.toHex(ShataTestnet.MAIN_ADDRESS));
+      }
+    }
+    const counts = await mainContract.stakedCounts().call();
+
+    return {
+      stakedCounts: counts.toNumber()
+    }
+  })
+
+interface IWhiteList {
+  account: any;
+}
+
+export const getWhilteLists = createAsyncThunk(
+  'nft/whitelists',
+  async ({ account }: IWhiteList) => {
+    let nfts: any[] = [], mainContract;
+
+    if (window) {
+      if (window.tronWeb && window.tronWeb.defaultAddress.base58) {
+        mainContract = await window.tronWeb.contract().at(tronWeb.address.toHex(ShataTestnet.MAIN_ADDRESS));
+
+        for (let i = 0; i < whitelistNfts.length; i++) {
+          let nft = await window.tronWeb.contract().at(tronWeb.address.toHex(whitelistNfts[i]));
+
+          let nft_counts = await nft.balanceOf(account).call();
+
+          let temp: any[] = [];
+
+          for (let j = 0; j < nft_counts.toNumber(); j++) {
+            console.log(i, j, "Staking...");
+            let tmptokenID = await nft.tokenOfOwnerByIndex(account, j).call();
+            let nftid = tronWeb.toDecimal(tmptokenID);
+            let nfturl = await nft.tokenURI(nftid).call();
+            let nfturi = `https://ipfs.io/ipfs/${nfturl.slice(7, 53)}/${nfturl
+              }.png`;
+
+            const approvedAddress = await nft.getApproved(nftid).call();
+            const isApprove = tronWeb.address.fromHex(approvedAddress).toLowerCase() == ShataTestnet.MAIN_ADDRESS.toLowerCase();
+            const mp = await mainContract.getMpOfToken(whitelistNfts[i], nftid).call();
+
+            temp.push([nftid, whitelistNfts[i], isApprove, mp.toNumber(), nfturi]);
+          }
+          nfts.push(temp.sort((a, b) => a[0] - b[0]));
+        }
+      }
+    }
+
+    return {
+      whiteLists: nfts.flat()
+    }
+  }
+)
+
 interface IGetStatus {
-  networkID: Networks;
-  provider: StaticJsonRpcProvider | JsonRpcProvider;
 }
 
 export const getStatus = createAsyncThunk(
   "nft/getstatus",
   async ({
-    networkID,
-    provider,
-  }: IGetStatus, { dispatch }) => {
-    if (!provider) {
-      dispatch(warning({ text: messages.please_connect_wallet }));
-      return;
+  }: IGetStatus) => {
+    let mainContract: any;
+
+    if (window) {
+      if (window.tronWeb && window.tronWeb.defaultAddress.base58) {
+        mainContract = await window.tronWeb.contract().at(tronWeb.address.toHex(ShataTestnet.MAIN_ADDRESS));
+      }
     }
-    const addresses = getAddresses(networkID);
-    const provider1 = new ethers.providers.Web3Provider(window.ethereum);
-    await provider1.send("eth_requestAccounts", []);
-    const signer = provider1.getSigner();
 
-    const mainContract = new ethers.Contract(
-      addresses.MAIN_ADDRESS,
-      mainABIS[0].abi,
-      signer
-    );
-
-    const status = await mainContract.getStatus();
+    const status = await mainContract.status().call();
 
     return {
       status: {
@@ -70,145 +113,100 @@ export const getStatus = createAsyncThunk(
 );
 
 interface IGetUserInfo {
-  networkID: Networks;
-  provider: StaticJsonRpcProvider | JsonRpcProvider;
-  walletAddress: string
+  walletAddress: any
 }
 
 export const getUserInfo = createAsyncThunk(
   "nft/getuserinfo",
   async ({
-    networkID,
-    provider,
     walletAddress
-  }: IGetUserInfo, { dispatch }) => {
-    if (!provider) {
-      dispatch(warning({ text: messages.please_connect_wallet }));
-      return;
+  }: IGetUserInfo) => {
+    let mainContract: any;
+
+    if (window) {
+      if (window.tronWeb && window.tronWeb.defaultAddress.base58) {
+        mainContract = await window.tronWeb.contract().at(tronWeb.address.toHex(ShataTestnet.MAIN_ADDRESS));
+      }
     }
-    const addresses = getAddresses(networkID);
-    const provider1 = new ethers.providers.Web3Provider(window.ethereum);
-    await provider1.send("eth_requestAccounts", []);
-    const signer = provider1.getSigner();
 
-    const mainContract = new ethers.Contract(
-      addresses.MAIN_ADDRESS,
-      mainABIS[0].abi,
-      signer
-    );
-
-    const status = await mainContract.getUserInfo(walletAddress);
+    const status = await mainContract.ownerInfo(walletAddress).call();
 
     return {
       userInfo: {
-        newtrons: status.newtrons,
-        protons: status.protons,
-        spins: status.spins,
+        newtrons: status.newtrons.toNumber(),
+        protons: status.protons.toNumber(),
+        spins: status.spins.toNumber(),
       }
     };
+
   }
 );
 
 interface IGetApproveSlice {
-  networkID: Networks;
-  provider: StaticJsonRpcProvider | JsonRpcProvider;
-  nfts: [[number, string]];
+  nfts: any[];
 }
 
 export const getApproves = createAsyncThunk(
   "nft/getapproves",
   async ({
-    networkID,
-    provider,
     nfts
   }: IGetApproveSlice, { dispatch }) => {
-    if (!provider) {
-      dispatch(warning({ text: messages.please_connect_wallet }));
-      return;
-    }
-    const addresses = getAddresses(networkID);
-    const provider1 = new ethers.providers.Web3Provider(window.ethereum);
-    await provider1.send("eth_requestAccounts", []);
-    const signer = provider1.getSigner();
+    if (window) {
+      if (window.tronWeb && window.tronWeb.defaultAddress.base58) {
+        const approvedList = await Promise.all(
+          nfts.map(async (nft) => {
+            const id = nft[0];
+            const address = nft[1];
 
-    const approvedList = await Promise.all(nfts.map(async (nft) => {
-      const id = nft[0];
-      const address = nft[1];
+            let nftContract = await window.tronWeb.contract().at(tronWeb.address.toHex(address));
 
-      const nftContract = new ethers.Contract(
-        address,
-        nftABIs[whitelistNfts[address]].abi,
-        signer
-      );
-
-      try {
-        const approvedAddress = await nftContract.getApproved(id);
-        return approvedAddress.toLowerCase() == addresses.MAIN_ADDRESS.toLowerCase();
-      } catch (err: any) {
-        console.error("Transaction error:", err);
-        if (err.hasOwnProperty("error")) {
-          alert("Error message:" + err.error.message);
-        }
-        return metamaskErrorWrap(err, dispatch);
+            try {
+              const approvedAddress = await nftContract.getApproved(id).call();
+              return tronWeb.address.fromHex(approvedAddress).toLowerCase() == ShataTestnet.MAIN_ADDRESS.toLowerCase();
+            } catch (err: any) {
+              console.error("Transaction error:", err);
+              if (err.hasOwnProperty("error")) {
+                alert("Error message:" + err.error.message);
+              }
+              return metamaskErrorWrap(err, dispatch);
+            }
+          }
+          )
+        );
+        return { approve: approvedList };
       }
-    }));
-    //console.log(8888888);
-    return { approve: approvedList };
+    }
   }
 );
 
 interface IGetMps {
-  networkID: Networks;
-  provider: StaticJsonRpcProvider | JsonRpcProvider;
-  nfts: [[number, string]];
+  nfts: Array<[number, string, string]>;
 }
 
 export const getMps = createAsyncThunk(
   "nft/getmps",
-  async ({
-    networkID,
-    provider,
-    nfts
-  }: IGetMps, { dispatch }) => {
-    if (!provider) {
-      dispatch(warning({ text: messages.please_connect_wallet }));
-      return;
-    }
-    const addresses = getAddresses(networkID);
-    const provider1 = new ethers.providers.Web3Provider(window.ethereum);
-    await provider1.send("eth_requestAccounts", []);
-    const signer = provider1.getSigner();
+  async ({ nfts }: IGetMps) => {
+    let mainContract: any;
 
-    const mainContract = new ethers.Contract(
-      addresses.MAIN_ADDRESS,
-      mainABIS[0].abi,
-      signer
-    );
-
-    const mps = await Promise.all(nfts.map(async (nft) => {
-      const id = nft[0];
-      const address = nft[1];
-
-      try {
-        const mp = await mainContract.getMpOfToken(address, id);
-        return mp.toNumber();
-      } catch (err: any) {
-        console.error("Transaction error:", err);
-        if (err.hasOwnProperty("error")) {
-          alert("Error message:" + err.error.message);
-        }
-        return metamaskErrorWrap(err, dispatch);
+    if (window) {
+      if (window.tronWeb && window.tronWeb.defaultAddress.base58) {
+        mainContract = await window.tronWeb.contract().at(tronWeb.address.toHex(ShataTestnet.MAIN_ADDRESS));
       }
-    }));
+    }
+
+    let mps: any[] = [];
+    for (let i = 0; i < nfts.length; i++) {
+      const mp = await mainContract.getMpOfToken(nfts[i][1], nfts[i][0]).call();
+      mps.push(mp.toNumber());
+    }
     return { mps };
   }
 );
 
 interface IsetApprove {
-  networkID: Networks;
-  provider: StaticJsonRpcProvider | JsonRpcProvider;
   id: Number;
   collection: string;
+  whiteLists: Array<[number, string, boolean, number, string]>
 }
 
 export const setApprove = createAsyncThunk(
@@ -216,73 +214,86 @@ export const setApprove = createAsyncThunk(
 
   async (
     {
-      networkID,
-      provider,
       id,
       collection,
+      whiteLists
     }: IsetApprove,
     { dispatch }
   ) => {
-    if (!provider) {
-      dispatch(warning({ text: messages.please_connect_wallet }));
-      return;
-    }
-    const addresses = getAddresses(networkID);
-    const provider1 = new ethers.providers.Web3Provider(window.ethereum);
-    await provider1.send("eth_requestAccounts", []); // <- this promps user to connect metamask
-    const signer = provider1.getSigner();
-    console.log(collection, addresses.MAIN_ADDRESS, id, 333333);
-
-    const nftContract = new ethers.Contract(
-      collection,
-      nftABIs[whitelistNfts[collection]].abi,
-      signer
-    );
-
-    let enterTx;
-    try {
-      enterTx = await nftContract.approve(addresses.MAIN_ADDRESS, id);
-      await enterTx.wait();
-      return;
-    } catch (err: any) {
-      console.error("Transaction error:", err);
-      if (err.hasOwnProperty("error")) {
-        alert("Error message:" + err.error.message);
+    let nftContract;
+    if (window) {
+      if (window.tronWeb && window.tronWeb.defaultAddress.base58) {
+        nftContract = await window.tronWeb.contract().at(tronWeb.address.toHex(collection));
       }
-      return metamaskErrorWrap(err, dispatch);
-    } finally {
+    }
+
+    let enterTx, receipt = null, i = 0;
+    try {
+      enterTx = await nftContract.approve(
+        ShataTestnet.MAIN_ADDRESS, id
+      ).send({ feeLimit: 100000000 });
+
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      while (receipt === 'REVERT' || receipt == null) {
+        i++;
+        if (window.tronWeb) {
+          const transaction = await window.tronWeb.trx.getTransaction(enterTx);
+          receipt = transaction.ret[0].contractRet;
+        }
+        if (receipt === 'REVERT') {
+          await new Promise((resolve) => setTimeout(resolve, 1000)); // wait for 1 second
+          if (i == 10) {
+            notification({ title: "Approving failed!", type: "danger" });
+            throw new Error("");
+          }
+        }
+      }
+
+      let copyArray: any[] = [];
+
+      for (let i = 0; i < whiteLists.length; i++) {
+        const id = whiteLists[i][0];
+        const address = whiteLists[i][1];
+
+        let nftContract = await window.tronWeb.contract().at(tronWeb.address.toHex(address));
+        const approvedAddress = await nftContract.getApproved(id).call();
+        let element = [...whiteLists[i]];
+        element[2] = tronWeb.address.fromHex(approvedAddress).toLowerCase() == ShataTestnet.MAIN_ADDRESS.toLowerCase();
+        copyArray.push(element);
+      }
+      notification({ title: "Successfully approved!", type: "success" });
+      return { whiteLists: copyArray }
+    } catch (err: any) {
+      throw err;
     }
   }
 );
 
 interface IGetStakedNftFromUserSlice {
-  networkID: Networks;
-  provider: StaticJsonRpcProvider | JsonRpcProvider;
-  walletAddress: string;
+  walletAddress: any;
 }
 
 export const getStakedNftsFromUser = createAsyncThunk(
   "nft/getStakedNftsFromUser",
   async ({
-    networkID,
-    provider,
     walletAddress
-  }: IGetStakedNftFromUserSlice, { dispatch }) => {
-    if (!provider) {
-      dispatch(warning({ text: messages.please_connect_wallet }));
-      return;
+  }: IGetStakedNftFromUserSlice) => {
+    let mainContract: any;
+
+    if (window) {
+      if (window.tronWeb && window.tronWeb.defaultAddress.base58) {
+        mainContract = await window.tronWeb.contract().at(tronWeb.address.toHex(ShataTestnet.MAIN_ADDRESS));
+      }
     }
-    const addresses = getAddresses(networkID);
-    const provider1 = new ethers.providers.Web3Provider(window.ethereum);
-    await provider1.send("eth_requestAccounts", []);
-    const signer = provider1.getSigner();
 
-    const stakingContract = new ethers.Contract(addresses.MAIN_ADDRESS, mainABIS[0].abi, signer);
+    const indexes = await mainContract.getNftIndexesFromUserAddress(walletAddress).call();
 
-    const myStakedNfts = await stakingContract.getNftsFromUserAddress(walletAddress);
+    let StakedNftsFromUser: any[] = [];
 
-    const StakedNftsFromUser = myStakedNfts.map((nft: any, index: number) => {
-      return {
+    for (let i = 0; i < indexes.length; i++) {
+      const nft = await mainContract.StakedNfts(indexes[i]).call();
+      StakedNftsFromUser.push({
         collection: nft.collection,
         tokenId: nft.tokenId.toNumber(),
         newtrons: nft.newtrons.toNumber(),
@@ -291,37 +302,80 @@ export const getStakedNftsFromUser = createAsyncThunk(
         stakedTimeStamp: nft.stakedTimeStamp.toNumber(),
         claimedTimeStamp: nft.claimedTimeStamp.toNumber(),
         claimable: nft.claimable
-      }
-    });
+      });
+    }
+
     return { StakedNftsFromUser };
   }
 );
 
+interface IGetRareNfts { }
+
+export const getRareNfts = createAsyncThunk(
+  "nft/getRareNfts",
+  async ({ }: IGetRareNfts) => {
+    let mainContract: any;
+
+    if (window) {
+      if (window.tronWeb && window.tronWeb.defaultAddress.base58) {
+        mainContract = await window.tronWeb.contract().at(tronWeb.address.toHex(ShataTestnet.MAIN_ADDRESS));
+      }
+    }
+
+    let rareNfts: any[] = [], check = true;
+
+    for (let i = 0; i < 10; i++) {
+      const index = await mainContract.rareNfts(i).call();
+      if (index == 0 && !check) {
+
+      } else {
+        const nft = await mainContract.StakedNfts(index).call();
+        rareNfts.push({
+          collection: nft.collection,
+          tokenId: nft.tokenId.toNumber(),
+          newtrons: nft.newtrons.toNumber(),
+          protons: nft.protons.toNumber(),
+          mp: nft.mp.toNumber(),
+          stakedTimeStamp: nft.stakedTimeStamp.toNumber(),
+          claimedTimeStamp: nft.claimedTimeStamp.toNumber(),
+          claimable: nft.claimable
+        });
+      }
+      if (index == 0) check = false;
+    }
+
+    return { rareNfts };
+  }
+);
+
 interface IGetStakedNfts {
-  networkID: Networks;
-  provider: StaticJsonRpcProvider | JsonRpcProvider;
 }
 
 export const getStakedNfts = createAsyncThunk(
   "nft/getStakedNfts",
   async ({
-    networkID,
-    provider,
-  }: IGetStakedNfts, { dispatch }) => {
-    if (!provider) {
-      dispatch(warning({ text: messages.please_connect_wallet }));
-      return;
+  }: IGetStakedNfts,) => {
+    let mainContract: any;
+    if (window) {
+      if (window.tronWeb && window.tronWeb.defaultAddress.base58) {
+        mainContract = await window.tronWeb.contract().at(tronWeb.address.toHex(ShataTestnet.MAIN_ADDRESS));
+      }
     }
-    const addresses = getAddresses(networkID);
-    const provider1 = new ethers.providers.Web3Provider(window.ethereum);
-    await provider1.send("eth_requestAccounts", []);
-    const signer = provider1.getSigner();
 
-    const stakingContract = new ethers.Contract(addresses.MAIN_ADDRESS, mainABIS[0].abi, signer);
+    const stakedRegistry = await mainContract.stakedRegistry().call();
 
-    const allStakedNfts = await stakingContract.getAllNFTs();
+    let allStakedNfts: any[] = []; let j = 0;
 
-    const StakedNfts = allStakedNfts.map((nft: any, index: number) => {
+    for (let i = stakedRegistry.toNumber() - 1; i >= 0; i--) {
+      const nft = await mainContract.StakedNfts(i).call();
+
+      if (nft.mp.toNumber() && j < 10) {
+        allStakedNfts.push(nft);
+        j++;
+      }
+    }
+
+    const StakedNfts = allStakedNfts.map((nft: any) => {
       return {
         collection: nft.collection,
         tokenId: nft.tokenId.toNumber(),
@@ -333,68 +387,72 @@ export const getStakedNfts = createAsyncThunk(
         claimable: nft.claimable
       }
     })
+
     return { StakedNfts };
   }
 );
 
 interface IstakeSlice {
-  networkID: Networks;
-  provider: StaticJsonRpcProvider | JsonRpcProvider;
   tokenId: Number;
-  walletAddress: string,
+  walletAddress: any,
   address: string;
 }
 
 export const stakeNft = createAsyncThunk(
   "stakeSlice/stakeSlice",
-
   async (
     {
-      networkID,
-      provider,
       tokenId,
       address,
       walletAddress
     }: IstakeSlice,
-    { dispatch }
+    { }
   ) => {
-    if (!provider) {
-      dispatch(warning({ text: messages.please_connect_wallet }));
-      return;
+    let mainContract;
+    if (window) {
+      if (window.tronWeb && window.tronWeb.defaultAddress.base58) {
+        mainContract = await window.tronWeb.contract().at(tronWeb.address.toHex(ShataTestnet.MAIN_ADDRESS));
+      }
     }
-    const addresses = getAddresses(networkID);
-    const provider1 = new ethers.providers.Web3Provider(window.ethereum);
-    await provider1.send("eth_requestAccounts", []); // <- this promps user to connect metamask
-    const signer = provider1.getSigner();
-    const mainContract = new ethers.Contract(
-      addresses.MAIN_ADDRESS,
-      mainABIS[0].abi,
-      signer
-    );
-    let enterTx;
-    try {
-      enterTx = await mainContract.stakeNFT(address, tokenId);
 
-      await enterTx.wait();
-      
-      BroadcastMessage(`${walletAddress.slice(0,4)}...${walletAddress.slice(-4)}` + " staked tokenId " + tokenId + " at NFT collection " + `${address.slice(0,4)}...${address.slice(-4)}`);
+    let enterTx, receipt = null, i = 0;
+
+    try {
+      enterTx = await mainContract.stakeNFT(address, tokenId).send({ feeLimit: 1000000000 });
+
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      while (receipt === 'REVERT' || receipt == null) {
+        i++;
+        if (window.tronWeb) {
+          const transaction = await window.tronWeb.trx.getTransaction(enterTx);
+          receipt = transaction.ret[0].contractRet;
+        }
+        if (receipt === 'REVERT') {
+          await new Promise((resolve) => setTimeout(resolve, 1000)); // wait for 1 second
+          if (i == 10) {
+            notification({ title: "Insert your mp first!", type: "danger" });
+            throw new Error("");
+          }
+        }
+      }
+
+      notification({ title: "Successfully staked!", type: "success" });
+      const tronWallet = getTronAddress(walletAddress), tronCollection = getTronAddress(address);
+      BroadcastMessage(`${tronWallet.slice(0, 4)}...${tronWallet.slice(-4)}` + " staked tokenId " + tokenId + " at NFT collection " + `${tronCollection.slice(0, 4)}...${tronCollection.slice(-4)}`);
       return;
     } catch (err: any) {
-      console.error("Transaction error:", err);
-      if (err.hasOwnProperty("error")) {
-        alert("Error message:" + err.error.message);
-      }
-      return metamaskErrorWrap(err, dispatch);
+      console.log(err);
+      throw err;
+      //notification({ title: "Something went wrong! Try again!", type: "danger" });
     }
   }
 );
 
 interface IunStakeSlice {
-  networkID: Networks;
-  provider: StaticJsonRpcProvider | JsonRpcProvider;
   tokenId: Number;
   address: string;
-  walletAddress: string
+  walletAddress: any
 }
 
 export const unStakeNft = createAsyncThunk(
@@ -402,54 +460,59 @@ export const unStakeNft = createAsyncThunk(
 
   async (
     {
-      networkID,
-      provider,
       tokenId,
       address,
       walletAddress
     }: IunStakeSlice,
-    { dispatch }
+    { }
   ) => {
-    if (!provider) {
-      dispatch(warning({ text: messages.please_connect_wallet }));
-      return;
-    }
-    const addresses = getAddresses(networkID);
-    const provider1 = new ethers.providers.Web3Provider(window.ethereum);
-    await provider1.send("eth_requestAccounts", []); // <- this promps user to connect metamask
-    const signer = provider1.getSigner();
+    if (window) {
+      if (window.tronWeb && window.tronWeb.defaultAddress.base58) {
+        const mainContract = await window.tronWeb.contract().at(tronWeb.address.toHex(ShataTestnet.MAIN_ADDRESS));
 
-    const mainContract = new ethers.Contract(
-      addresses.MAIN_ADDRESS,
-      mainABIS[0].abi,
-      signer
-    );
+        let enterTx, receipt = null, i = 0;
+        try {
+          enterTx = await mainContract.unStakeNFT(address, tokenId).send({
+            from: address,
+            feeLimit: 1000000000,
+          });
 
-    let enterTx;
-    try {
-      enterTx = await mainContract.unStakeNFT(address, tokenId);
+          await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      await enterTx.wait();
+          while (receipt === 'REVERT' || receipt == null) {
+            i++;
+            const transaction = await window.tronWeb.trx.getTransaction(enterTx);
+            if (window.tronWeb) {
+              receipt = transaction.ret[0].contractRet;
+            }
+            if (receipt === 'REVERT') {
+              await new Promise((resolve) => setTimeout(resolve, 1000)); // wait for 1 second
+              if (i == 10) {
+                notification({ title: "Early Unstake!", type: "danger" });
+                throw new Error("");
+              }
+            }
+          }
 
-      BroadcastMessage(`${walletAddress.slice(0,4)}...${walletAddress.slice(-4)}` + " unstaked tokenId " + tokenId + " at NFT collection " + `${address.slice(0,4)}...${address.slice(-4)}`);
-    
-      return;
-    } catch (err: any) {
-      console.error("Transaction error:", err);
-      if (err.hasOwnProperty("error")) {
-        alert("Error message:" + err.error.message);
+          notification({ title: "Successfully unstaked!", type: "success" });
+          const tronWallet = getTronAddress(walletAddress), tronCollection = getTronAddress(address);
+          BroadcastMessage(`${tronWallet.slice(0, 4)}...${tronWallet.slice(-4)}` + " unstaked tokenId " + tokenId + " at NFT collection " + `${tronCollection.slice(0, 4)}...${tronCollection.slice(-4)}`);
+          return;
+        } catch (err: any) {
+          console.log(err);
+          throw err;
+          //notification({ title: "Something went wrong! Try again!", type: "danger" });
+        }
       }
-      return metamaskErrorWrap(err, dispatch);
     }
+
   }
 );
 
 interface IclaimSlice {
-  networkID: Networks;
-  provider: StaticJsonRpcProvider | JsonRpcProvider;
   tokenId: Number;
   address: string;
-  walletAddress: string
+  walletAddress: any
 }
 
 export const claimNft = createAsyncThunk(
@@ -457,56 +520,61 @@ export const claimNft = createAsyncThunk(
 
   async (
     {
-      networkID,
-      provider,
       tokenId,
       address,
       walletAddress
     }: IclaimSlice,
     { dispatch }
   ) => {
-    if (!provider) {
-      dispatch(warning({ text: messages.please_connect_wallet }));
-      return;
+    let mainContract;
+    if (window) {
+      if (window.tronWeb && window.tronWeb.defaultAddress.base58) {
+        mainContract = await window.tronWeb.contract().at(tronWeb.address.toHex(ShataTestnet.MAIN_ADDRESS));
+      }
     }
-    const addresses = getAddresses(networkID);
-    const provider1 = new ethers.providers.Web3Provider(window.ethereum);
-    await provider1.send("eth_requestAccounts", []); // <- this promps user to connect metamask
-    const signer = provider1.getSigner();
 
-    const mainContract = new ethers.Contract(
-      addresses.MAIN_ADDRESS,
-      mainABIS[0].abi,
-      signer
-    );
-
-    let enterTx;
+    let enterTx, receipt = null, i = 0;
     try {
-      enterTx = await mainContract.claimNFT(address, tokenId, false);
-      await enterTx.wait();
+      enterTx = await mainContract.claimNFT(address, tokenId, false).send({ feeLimit: 100000000 });
 
-      const status = await mainContract.getStatus();
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      if (status.message) {
-        alert(status.message);
-      } else {
-        BroadcastMessage(`${walletAddress.slice(0,4)}...${walletAddress.slice(-4)}` + " claimed " + status.claimedNewtrons + "Newtron tokens!");
+      while (receipt === 'REVERT' || receipt == null) {
+        i++;
+        if (window.tronWeb) {
+          const transaction = await window.tronWeb.trx.getTransaction(enterTx);
+          receipt = transaction.ret[0].contractRet;
+        }
+        if (receipt === 'REVERT') {
+          await new Promise((resolve) => setTimeout(resolve, 1000)); // wait for 1 second
+          if (i == 10) {
+            notification({
+              title: "Claim failed!",
+              message: "You wanna claim too early or can't claim anymore for this nft!",
+              type: "danger"
+            });
+            throw new Error("");
+          }
+        }
+      }
+
+      const status = await mainContract.status().call();
+      notification({ title: "Successfully claimed!", type: "success" });
+      const tronWallet = getTronAddress(walletAddress);
+      if (status.claimedNewtrons) {
+        BroadcastMessage(`${tronWallet.slice(0, 4)}...${tronWallet.slice(-4)}` + " claimed " + status.claimedNewtrons + "Newtron tokens!");
       }
       return;
     } catch (err: any) {
-      console.error("Transaction error:", err);
-      if (err.hasOwnProperty("error")) {
-        alert("Error message:" + err.error.message);
-      }
-      return metamaskErrorWrap(err, dispatch);
+      console.log(err);
+      throw err;
+      //notification({ title: err, type: "danger" });
     }
   }
 );
 
 interface IclaimAll {
-  networkID: Networks;
-  provider: StaticJsonRpcProvider | JsonRpcProvider;
-  walletAddress: string
+  walletAddress: any
 }
 
 export const claimAll = createAsyncThunk(
@@ -514,52 +582,58 @@ export const claimAll = createAsyncThunk(
 
   async (
     {
-      networkID,
-      provider,
       walletAddress
     }: IclaimAll,
     { dispatch }
   ) => {
-    if (!provider) {
-      dispatch(warning({ text: messages.please_connect_wallet }));
-      return;
-    }
-    const addresses = getAddresses(networkID);
-    const provider1 = new ethers.providers.Web3Provider(window.ethereum);
-    await provider1.send("eth_requestAccounts", []); // <- this promps user to connect metamask
-    const signer = provider1.getSigner();
+    if (window) {
+      if (window.tronWeb && window.tronWeb.defaultAddress.base58) {
+        const mainContract = await window.tronWeb.contract().at(tronWeb.address.toHex(ShataTestnet.MAIN_ADDRESS));
 
-    const mainContract = new ethers.Contract(
-      addresses.MAIN_ADDRESS,
-      mainABIS[0].abi,
-      signer
-    );
+        let enterTx, receipt = null, i = 0;
+        try {
+          enterTx = await mainContract.claimNFTsFromUser(walletAddress).send({ feeLimit: 100000000 });
 
-    let enterTx;
-    try {
-      enterTx = await mainContract.claimNFTsFromUser(walletAddress);
-      await enterTx.wait();
+          await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      const status = await mainContract.getStatus();
+          while (receipt === 'REVERT' || receipt == null) {
+            i++;
+            if (window.tronWeb) {
+              const transaction = await window.tronWeb.trx.getTransaction(enterTx);
+              receipt = transaction.ret[0].contractRet;
+            }
+            if (receipt === 'REVERT') {
+              await new Promise((resolve) => setTimeout(resolve, 1000)); // wait for 1 second
+              if (i == 10) {
+                notification({ title: "No nfts to claim! All the tokens are not claimable or early claimed!", type: "danger" });
+                throw new Error("");
+              }
+            }
+          }
 
-      if (status.claimedNewtrons) {
-        BroadcastMessage(`${walletAddress.slice(0,4)}...${walletAddress.slice(-4)}` + " claimed " + status.claimedNewtrons + "Newtron tokens!");
+          const status = await mainContract.status().call();
+
+          const tronWallet = getTronAddress(walletAddress);
+          if (status.claimedNewtrons) {
+            notification({ title: "Successfully claimed for all nfts!", type: "success" });
+            BroadcastMessage(`${tronWallet.slice(0, 4)}...${tronWallet.slice(-4)}` + " claimed " + status.claimedNewtrons + "Newtron tokens!");
+          } else {
+            notification({ title: "Nothing claimed!", type: "warning" });
+          }
+          return;
+        } catch (err: any) {
+          console.log(err);
+          throw err;
+          //notification({ title: err, type: "danger" });
+        }
       }
-      return;
-    } catch (err: any) {
-      console.error("Transaction error:", err);
-      if (err.hasOwnProperty("error")) {
-        alert("Error message:" + err.error.message);
-      }
-      return metamaskErrorWrap(err, dispatch);
     }
+
   }
 );
 
 interface IwithDraw {
-  networkID: Networks;
-  provider: StaticJsonRpcProvider | JsonRpcProvider;
-  walletAddress: string
+  walletAddress: any
 }
 
 export const withDraw = createAsyncThunk(
@@ -567,50 +641,55 @@ export const withDraw = createAsyncThunk(
 
   async (
     {
-      networkID,
-      provider,
       walletAddress
     }: IwithDraw,
     { dispatch }
   ) => {
-    if (!provider) {
-      dispatch(warning({ text: messages.please_connect_wallet }));
-      return;
-    }
-    const addresses = getAddresses(networkID);
-    const provider1 = new ethers.providers.Web3Provider(window.ethereum);
-    await provider1.send("eth_requestAccounts", []); // <- this promps user to connect metamask
-    const signer = provider1.getSigner();
+    if (window) {
+      if (window.tronWeb && window.tronWeb.defaultAddress.base58) {
+        const mainContract = await window.tronWeb.contract().at(tronWeb.address.toHex(ShataTestnet.MAIN_ADDRESS));
 
-    const mainContract = new ethers.Contract(
-      addresses.MAIN_ADDRESS,
-      mainABIS[0].abi,
-      signer
-    );
+        let enterTx, receipt = null, i = 0;
+        try {
+          enterTx = await mainContract.withDraw().send({ feeLimit: 100000000 });
 
-    let enterTx;
-    try {
-      enterTx = await mainContract.withDraw();
-      await enterTx.wait();
+          await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      const status = await mainContract.getStatus();
-      BroadcastMessage(`${walletAddress.slice(0,4)}...${walletAddress.slice(-4)}` + " withdrawed " + status.claimedNewtrons + "Newtron tokens and " + status.claimedProtons + "Proton tokens!");
-      return;
-    } catch (err: any) {
-      console.error("Transaction error:", err);
-      if (err.hasOwnProperty("error")) {
-        alert("Error message:" + err.error.message);
+          while (receipt === 'REVERT' || receipt == null) {
+            i++;
+            if (window.tronWeb) {
+              const transaction = await window.tronWeb.trx.getTransaction(enterTx);
+              receipt = transaction.ret[0].contractRet;
+            }
+            if (receipt === 'REVERT') {
+              await new Promise((resolve) => setTimeout(resolve, 1000)); // wait for 1 second
+              if (i == 10) {
+                notification({ title: "Nothing withdrawed!", type: "danger" });
+                throw new Error("");
+              }
+            }
+          }
+
+          const status = await mainContract.status().call();
+          notification({ title: "Successfully withdrawed!", type: "success" });
+
+          const tronWallet = getTronAddress(walletAddress);
+          BroadcastMessage(`${tronWallet.slice(0, 4)}...${tronWallet.slice(-4)}` + " withdrawed " + status.claimedNewtrons + "Newtron tokens and " + status.claimedProtons + "Proton tokens!");
+          return;
+        } catch (err: any) {
+          console.log(err);
+          throw err;
+          //notification({ title: err, type: "success" });
+        }
       }
-      return metamaskErrorWrap(err, dispatch);
     }
+
   }
 );
 
 interface IspinNft {
-  networkID: Networks;
-  provider: StaticJsonRpcProvider | JsonRpcProvider;
   value: number;
-  walletAddress: string
+  walletAddress: any
 }
 
 export const spinNft = createAsyncThunk(
@@ -618,49 +697,57 @@ export const spinNft = createAsyncThunk(
 
   async (
     {
-      networkID,
-      provider,
       value,
       walletAddress
     }: IspinNft,
     { dispatch }
   ) => {
-    if (!provider) {
-      dispatch(warning({ text: messages.please_connect_wallet }));
-      return;
-    }
+    if (window) {
+      if (window.tronWeb && window.tronWeb.defaultAddress.base58) {
+        const mainContract = await window.tronWeb.contract().at(tronWeb.address.toHex(ShataTestnet.MAIN_ADDRESS));
 
-    const addresses = getAddresses(networkID);
-    const provider1 = new ethers.providers.Web3Provider(window.ethereum);
-    await provider1.send("eth_requestAccounts", []); // <- this promps user to connect metamask
-    const signer = provider1.getSigner();
+        let enterTx, receipt = null, i = 0;
+        try {
+          enterTx = await mainContract.spin(value).send({ feeLimit: 100000000 });
 
-    const mainContract = new ethers.Contract(
-      addresses.MAIN_ADDRESS,
-      mainABIS[0].abi,
-      signer
-    );
+          await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    let enterTx;
-    try {
-      enterTx = await mainContract.spin(value);
-      await enterTx.wait();
+          while (receipt === 'REVERT' || receipt == null) {
+            i++;
+            if (window.tronWeb) {
+              const transaction = await window.tronWeb.trx.getTransaction(enterTx);
+              receipt = transaction.ret[0].contractRet;
+            }
+            if (receipt === 'REVERT') {
+              await new Promise((resolve) => setTimeout(resolve, 1000)); // wait for 1 second
+              if (i == 10) {
+                notification({ title: "You don't have spin opportunities!", type: "danger" });
+                throw new Error("");
+                //return;
+              }
+            }
+          }
 
-      const status = await mainContract.getStatus();
+          const status = await mainContract.status().call();
+          const tronWallet = getTronAddress(walletAddress);
 
-      if (status.spin) {
-        BroadcastMessage(`${walletAddress.slice(0,4)}...${walletAddress.slice(-4)}` + " just hit the 7 on spin and get 1 proton token!");
-        if (status.jackpot && status.message) {
-          BroadcastMessage(status.message);
+          if (status.spin) {
+            notification({ title: "You hit the 7, and get 1 proton token!", type: "success" });
+            BroadcastMessage(`${tronWallet.slice(0, 4)}...${tronWallet.slice(-4)}` + " just hit the 7 on spin and get 1 proton token!");
+            if (status.jackpot) {
+              notification({ title: "Jackpot Success!", type: "success" });
+              BroadcastMessage(`${tronWallet.slice(0, 4)}...${tronWallet.slice(-4)}` + "just jackpoted!");
+            }
+          } else {
+            notification({ title: "Sorry, you didn't hit the 7, so can't get proton token! Try it again!", type: "warning" });
+          }
+          return;
+        } catch (err: any) {
+          console.log(err);
+          throw err;
+          //notification({ title: err, type: "danger" });
         }
       }
-      return;
-    } catch (err: any) {
-      console.error("Transaction error:", err);
-      if (err.hasOwnProperty("error")) {
-        alert("Error message:" + err.error.message);
-      }
-      return metamaskErrorWrap(err, dispatch);
     }
   }
 );
@@ -668,23 +755,29 @@ export const spinNft = createAsyncThunk(
 export interface ONftSlice {
   approve: Array<Boolean>,
   mps: Array<Number>,
+  stakedCounts: number,
   StakedNftsFromUser: Array<{ collection: string, tokenId: number, newtrons: number, protons: number, mp: number, stakedTimeStamp: number, claimedTimeStamp: number, claimable: boolean }>
   StakedNfts: Array<{ collection: string, tokenId: number, newtrons: number, protons: number, mp: number, stakedTimeStamp: number, claimedTimeStamp: number, claimable: boolean }>
+  rareNfts: Array<{ collection: string, tokenId: number, newtrons: number, protons: number, mp: number, stakedTimeStamp: number, claimedTimeStamp: number, claimable: boolean }>
   loading: Boolean;
-  update: Boolean,
-  userInfo: { newtrons: number, protons: number, spins : number },
-  status : { totalNewTrons : number, totalProtons : number },
+  update: { approved: Boolean, staked: Boolean, claimed: Boolean, withdrawed: Boolean };
+  userInfo: { newtrons: number, protons: number, spins: number },
+  status: { totalNewTrons: number, totalProtons: number },
+  whiteLists: Array<[number, string, boolean, number, string]>
 }
 
 const initialState: ONftSlice = {
   approve: [],
   mps: [],
+  stakedCounts: 0,
   StakedNftsFromUser: [],
   StakedNfts: [],
-  loading: true,
-  update: false,
-  userInfo: { newtrons: 0, protons: 0, spins : 0 },
-  status : {totalNewTrons : 0, totalProtons : 0}
+  rareNfts: [],
+  loading: false,
+  update: { approved: false, staked: false, claimed: false, withdrawed: false },
+  userInfo: { newtrons: 0, protons: 0, spins: 0 },
+  status: { totalNewTrons: 0, totalProtons: 0 },
+  whiteLists: []
 };
 
 const nftSlice = createSlice({
@@ -698,6 +791,43 @@ const nftSlice = createSlice({
   extraReducers: builder => {
     builder
       /////////////
+      .addCase(getNftsCount.pending, (state, action) => {
+        state.loading = true;
+
+      })
+      .addCase(getNftsCount.fulfilled, (state, action) => {
+        setAll(state, action.payload);
+        state.loading = false;
+      })
+      .addCase(getNftsCount.rejected, (state, { error }) => {
+        state.loading = false;
+      })
+
+      /////////////
+      .addCase(getWhilteLists.pending, (state, action) => {
+        state.loading = true;
+      })
+      .addCase(getWhilteLists.fulfilled, (state, action) => {
+        setAll(state, action.payload);
+        state.loading = false;
+      })
+      .addCase(getWhilteLists.rejected, (state, { error }) => {
+        state.loading = false;
+      })
+
+      /////////////
+      .addCase(getRareNfts.pending, (state, action) => {
+        state.loading = true;
+      })
+      .addCase(getRareNfts.fulfilled, (state, action) => {
+        setAll(state, action.payload);
+        state.loading = false;
+      })
+      .addCase(getRareNfts.rejected, (state, { error }) => {
+        state.loading = false;
+      })
+
+      /////////////
       .addCase(getStatus.pending, (state, action) => {
         state.loading = true;
       })
@@ -707,12 +837,12 @@ const nftSlice = createSlice({
       })
       .addCase(getStatus.rejected, (state, { error }) => {
         state.loading = false;
-        console.log(error);
       })
 
       /////////////
       .addCase(getUserInfo.pending, (state, action) => {
         state.loading = true;
+
       })
       .addCase(getUserInfo.fulfilled, (state, action) => {
         setAll(state, action.payload);
@@ -720,7 +850,6 @@ const nftSlice = createSlice({
       })
       .addCase(getUserInfo.rejected, (state, { error }) => {
         state.loading = false;
-        console.log(error);
       })
 
       ///////////
@@ -733,7 +862,6 @@ const nftSlice = createSlice({
       })
       .addCase(getApproves.rejected, (state, { error }) => {
         state.loading = false;
-        console.log(error);
       })
       /////////////
       .addCase(getMps.pending, (state, action) => {
@@ -776,7 +904,8 @@ const nftSlice = createSlice({
         state.loading = true;
       })
       .addCase(setApprove.fulfilled, (state, action) => {
-        state.update = !state.update;
+        state.update.approved = !state.update.approved;
+        setAll(state, action.payload);
         state.loading = false;
       })
       .addCase(setApprove.rejected, (state, { error }) => {
@@ -789,7 +918,7 @@ const nftSlice = createSlice({
         state.loading = true;
       })
       .addCase(stakeNft.fulfilled, (state, action) => {
-        state.update = !state.update;
+        state.update.staked = !state.update.staked;
         state.loading = false;
       })
       .addCase(stakeNft.rejected, (state, { error }) => {
@@ -802,7 +931,7 @@ const nftSlice = createSlice({
         state.loading = true;
       })
       .addCase(unStakeNft.fulfilled, (state, action) => {
-        state.update = !state.update;
+        state.update.staked = !state.update.staked;
         state.loading = false;
       })
       .addCase(unStakeNft.rejected, (state, { error }) => {
@@ -815,7 +944,7 @@ const nftSlice = createSlice({
         state.loading = true;
       })
       .addCase(claimNft.fulfilled, (state, action) => {
-        state.update = !state.update;
+        state.update.claimed = !state.update.claimed;
         state.loading = false;
       })
       .addCase(claimNft.rejected, (state, { error }) => {
@@ -823,30 +952,44 @@ const nftSlice = createSlice({
         console.log(error);
       })
 
+      /////////
+      .addCase(claimAll.pending, (state, action) => {
+        state.loading = true;
+      })
+      .addCase(claimAll.fulfilled, (state, action) => {
+        state.update.claimed = !state.update.claimed;
+        state.loading = false;
+      })
+      .addCase(claimAll.rejected, (state, { error }) => {
+        state.loading = false;
+        console.log(error);
+      })
+
+
       ////////////
       .addCase(withDraw.pending, (state, action) => {
         state.loading = true;
       })
       .addCase(withDraw.fulfilled, (state, action) => {
-        state.update = !state.update;
+        state.update.withdrawed = !state.update.withdrawed;
         state.loading = false;
       })
       .addCase(withDraw.rejected, (state, { error }) => {
         state.loading = false;
         console.log(error);
       })
-      // ////////////
-      // .addCase(withDraw.pending, (state, action) => {
-      //   state.loading = true;
-      // })
-      // .addCase(withDraw.fulfilled, (state, action) => {
-      //   state.update = !state.update;
-      //   state.loading = false;
-      // })
-      // .addCase(withDraw.rejected, (state, { error }) => {
-      //   state.loading = false;
-      //   console.log(error);
-      // })
+
+      ////////////
+      .addCase(spinNft.pending, (state, action) => {
+        state.loading = true;
+      })
+      .addCase(spinNft.fulfilled, (state, action) => {
+        state.loading = false;
+      })
+      .addCase(spinNft.rejected, (state, { error }) => {
+        state.loading = false;
+        console.log(error);
+      })
   },
 });
 

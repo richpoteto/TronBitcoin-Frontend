@@ -16,7 +16,7 @@ const WhitelistedItem = ({ id, address, approve, click, mp }: nftInfo) => {
       <TableRow
         sx={{
           backgroundColor: "common.black",
-          "&:not(:first-child)": {
+          "&:not(:first-of-type)": {
             borderTop: "3px solid #22274f",
           },
         }}
