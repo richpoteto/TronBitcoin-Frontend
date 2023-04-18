@@ -7,40 +7,28 @@ import NftImage from "assets/images/item/1 snowman epiphany.png";
 import { claimNft, unStakeNft } from "store/slice/nft-slice";
 import { getDayFromTimestamp, getHourFromTimestamp } from "utils/getDate";
 import { useEffect, useRef, useState } from "react";
-
-type StakedNftItemProps = {
-  stakedDate: number,
-  address: string,
-  id: number,
-  mp: number,
-  claimable: boolean,
-  newtrons: number
-}
-
-const StakedNftItem = ({ address, id, mp, claimable, stakedDate, newtrons }: StakedNftItemProps) => {
+ type StakedNftItemProps = {
+  stakedDate: number;
+  address: string;
+  id: number;
+  mp: number;
+  claimable: boolean;
+  newtrons: number;
+};
+ const StakedNftItem: React.FC<StakedNftItemProps> = ({ address, id, mp, claimable, stakedDate, newtrons }) => {
   const [walletAddress, setWallet] = useState("");
   const [disable, setDisable] = useState(false);
-  const isMounted = useRef(true);
-
-  const dispatch = useDispatch<AppDispatch>();
+  const [claimResult, setClaimResult] = useState<any>(null);
+   const dispatch = useDispatch<AppDispatch>();
   const { account } = useWeb3React();
-
-  const day = getDayFromTimestamp(stakedDate);
+   const day = getDayFromTimestamp(stakedDate);
   const hour = getHourFromTimestamp(stakedDate);
-
-  useEffect(() => {
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
-
-  useEffect(() => {
+   useEffect(() => {
     if (account && account !== "") {
       setWallet(account);
     }
   }, [account]);
-
-  async function _unStakeNft() {
+   async function _unStakeNft() {
     await dispatch(
       unStakeNft({
         address,
@@ -48,10 +36,8 @@ const StakedNftItem = ({ address, id, mp, claimable, stakedDate, newtrons }: Sta
         tokenId: id
       })
     )
-    
   }
-
-  async function _claimNft() {
+   async function _claimNft() {
     let result = await dispatch(
       claimNft({
         tokenId: id,
@@ -59,23 +45,22 @@ const StakedNftItem = ({ address, id, mp, claimable, stakedDate, newtrons }: Sta
         walletAddress
       })
     );
-    if (isMounted.current && result.meta.requestStatus === 'fulfilled') {
-      console.log(disable, 11111);
+    setClaimResult(result);
+  }
+   useEffect(() => {
+    if (claimResult && claimResult.meta.requestStatus === 'fulfilled') {
       setDisable(true);
     }
-  }
-
-  useEffect(() => {
+  }, [claimResult]);
+  
+   useEffect(() => {
     if (disable) {
       setTimeout(() => {
-        if (isMounted.current) {
           setDisable(false);
-        }
       }, 4 * 60 * 1000);
     }
   }, [disable]);
-
-  return (
+   return (
     <>
       <TableRow
         sx={{
@@ -124,9 +109,6 @@ const StakedNftItem = ({ address, id, mp, claimable, stakedDate, newtrons }: Sta
             <Button variant="contained" sx={{ mr: "8px" }} onClick={_unStakeNft}>
               Unstake
             </Button>
-            {
-              console.log(disable, 222)
-            }
             <Button
               variant="contained"
               onClick={_claimNft}
@@ -155,5 +137,4 @@ const StakedNftItem = ({ address, id, mp, claimable, stakedDate, newtrons }: Sta
     </>
   );
 };
-
-export default StakedNftItem;
+ export default StakedNftItem;
