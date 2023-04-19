@@ -86,7 +86,7 @@ const StakedNfts = ({nftsOfUser} : IStakedNfts) => {
               <TableBody>
                 {
                   nftsOfUser.map((nft, key) => (
-                    nft.mp && <StakedNftItem key={key} address={nft.collection} claimable ={nft.claimable} id={nft.tokenId} mp ={nft.mp} stakedDate={nft.stakedTimeStamp} newtrons={nft.newtrons}/>
+                    nft.mp && <StakedNftItem key={key} address={nft.collection} claimable ={nft.claimable} id={nft.tokenId} mp ={nft.mp} stakedDate={nft.stakedTimeStamp} claimedDate={nft.claimedTimeStamp} newtrons={nft.newtrons}/>
                   ))
                 }
               </TableBody>

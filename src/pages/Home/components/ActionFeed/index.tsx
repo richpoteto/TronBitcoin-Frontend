@@ -65,7 +65,7 @@ const ActionFeed = ({ nfts, messages }: IActionFeed) => {
         nftName: "Ghostface Gen 2",
         collectionName: "Ghostface",
         nftId: nft.tokenId,
-        rank: 5063,
+        rank: nft.mp,
         verified: true,
         miningPoint: nft.mp.toString(),
         minintPointColor: "#ff7523",

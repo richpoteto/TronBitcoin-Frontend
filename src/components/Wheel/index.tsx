@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import { Box } from "@mui/material";
 
 import "./wheel.scss";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "state";
+import { setNftVariables } from "store/slice/nft-slice";
+import { notification } from "utils/notification";
 
 const colors = [
   "#ff7523",
@@ -17,61 +21,86 @@ const colors = [
 ];
 
 type wheelProps = {
-  isActive: boolean,
   spin: number,
-  onSpin: (i: number) => void,
-  onClick: (s: number) => void,
-  setActive: (i: boolean) => void,
-  setSpinShow : (i : boolean) => void
+  spinSuccess : boolean,
+  spinChances : number,
+  spinShow : (i : boolean) => void,
+  spinNft : () => void
 }
 
-const Wheel = ({ onSpin, onClick, isActive, spin, setActive, setSpinShow }: wheelProps) => {
+const Wheel = ({ spin, spinSuccess, spinNft, spinChances, spinShow }: wheelProps) => {
   const [angle, setAngle] = useState<number>(-90);
-  const [number, setNumber] = useState(1);
+  const [active, setActive] = useState<boolean>(false);
+
+  let interval : any, timeout : any;
+  const dispatch = useDispatch<AppDispatch>();
 
   const getA = () => {
-    let total = 360 * 10;
-    total += spin < number ? 36 * (number - spin) : 36 * (10 - spin + number);
-
+    const rAngle = angle + 90;
+    const total = 360 * 10 + 36 * (spin - 1) - (rAngle - Math.floor(rAngle / 360) * 360);
     return total / 4.5;
   }
 
   const selectClick = () => {
-    if (!isActive) {
-      let selected = Math.floor(Math.random() * 10) + 1;
-      onSpin(selected);
-      onClick(selected);
-      setSpinShow(false);
+    console.log(spinChances, 11111);
+    if (!spinChances) {
+      notification({ title: "You don't have spin opportunities!", type: "danger" });
+      return;
+    }
+    if (!active) {
+      setActive(true);
+      spinShow(false);
+      spinNft();
+      dispatch(setNftVariables({spinSuccess : true}));
     }
   }
 
   useEffect(() => {
-    if (isActive) {
-      let time = 0;
-      const interval = setInterval(() => {
-        const delta = 0.3 * getA() - 0.5 * getA() * (0.2 * time + 0.01);
+    if (active) {
+      let time = 0, delay = 0;
+      
+      if (interval) clearInterval(interval);
+      if (timeout) clearTimeout(timeout);
 
+      if (!spinSuccess) {
+        setActive(false);
+        return;
+      }
+
+      if (spin) delay = 3000;
+      else delay = 100000;
+
+      console.log(delay, time, interval, timeout, angle, getA(), spin, 22222);
+
+      interval = setInterval(() => {
+        let delta = 0;
+        if (spin) {
+          delta = 0.3 * getA() - 0.5 * getA() * (0.2 * time + 0.01);
+        } else {
+          delta = 10;
+        }
         setAngle(prevAngle => {
           return prevAngle + delta;
-        }
-        );
+        });
         time += 0.1;
       }, 100);
 
-      const timeout = setTimeout(() => {
-        setNumber(spin);
-        setActive(false);
-        setSpinShow(true);
+      timeout = setTimeout(() => {
         clearInterval(interval);
-      }, 3000);
+        setActive(false);
+        spinShow(true);
+        dispatch(setNftVariables({spinNumber : 0}));
+        // if (angle + 90 >= 360) {
+        //   setAngle(angle - Math.floor((angle + 90) / 360) * 360);
+        // } 
+      }, delay);
 
       return () => {
         clearInterval(interval);
         clearTimeout(timeout);
       }
-
     }
-  }, [isActive, setAngle, spin]);
+  }, [active, spinSuccess, setAngle, spin]);
 
   return (
     <Box className="wheel-container" onClick={selectClick}>
@@ -80,7 +109,7 @@ const Wheel = ({ onSpin, onClick, isActive, spin, setActive, setSpinShow }: whee
         sx={{
           backgroundColor: "primary.light",
           transition:
-            isActive
+          active
               ? "transform 4s"
               : "transition: transform 0.25s",
           transform:

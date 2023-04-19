@@ -1,5 +1,5 @@
 export const ShataTestnet = {
-  MAIN_ADDRESS: "TBykWkqGvw3539ddG8ss4S2YCC8duHzJ8A", //Main Contract
-  Newtron_ADDRESS: "TLdw8aSNk92538iSn4p6bgACTr3DbH71Tp", //Newtron Contract
+  MAIN_ADDRESS: "TJ4HvrTML5A8DxY9NhuKdKpNLJWn7AXhNp", //Main Contract
+  Newtron_ADDRESS: "TJ3CNfEW7R5eR19nsbajGSZNDwTR4uhs7e", //Newtron Contract
   Proton_ADDRESS: "TBvtEE7m9tnRrX3p4MDcPu2zGpkJFC2t2k", //Proton Contract
 };

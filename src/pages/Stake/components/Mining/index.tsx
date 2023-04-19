@@ -3,7 +3,7 @@ import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import ArrowRightAltOutlinedIcon from "@mui/icons-material/ArrowRightAltOutlined";
 import Wheel from "components/Wheel";
 import { AppDispatch } from "state";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import "./mining.scss";
 import BackgroundImage from "assets/images/stake_background.png";
@@ -18,18 +18,28 @@ interface IMining {
 const Mining = ({messages} : IMining) => {
   const dispatch = useDispatch<AppDispatch>();
 
-  const [spin, setSpin] = useState(0);
+  // const [spin, setSpin] = useState<number>(0);
+ 
+  const [spinActive, setSpinActive] = useState(false);
 
   const [spins, setSpins] = useState<Array<number>>([]);
 
-  const [spinActive, setSpinActive] = useState(false);
-
-  const [spinShow, setSpinShow] = useState(false);
+  const [spinShow, setSpinShow] = useState<boolean>(false);
+  // console.log(spin, spinShow, 90909090);
 
   const { account } = useWeb3React();
 
   const userInfo = useSelector<IReduxState, { newtrons: number, protons: number, spins: number }>(state => {
     return state.nft.userInfo
+  });
+
+  const spinNumber = useSelector<IReduxState, number>(state => {
+    return state.nft.spinNumber
+  });
+
+  console.log("frontend", spinNumber);
+  const spinSuccess = useSelector<IReduxState, boolean>(state => {
+    return state.nft.spinSuccess
   });
 
   async function _claimAll() {
@@ -48,17 +58,17 @@ const Mining = ({messages} : IMining) => {
     )
   }
 
-  async function _spinNft(s : number) {
-    let spinStatus = await dispatch(
+  async function _spinNft() {
+    await dispatch(
       spinNft({
-        value: s,
         walletAddress: account
       })
     );
-    if (spinStatus.meta.requestStatus === 'fulfilled') {
-      setSpinActive(true);
-    }
   }
+
+  // const handleSpinChange = (newSpinValue : number) => {
+  //   setSpin(newSpinValue);
+  // }
   
   useEffect(() => {
     const prevSpins = localStorage.getItem("spins");
@@ -67,18 +77,24 @@ const Mining = ({messages} : IMining) => {
     }
   }, []);
 
+  // useEffect(() => {
+  //   if (spinSuccess) {
+  //     setSpinActive(spinSuccess);
+  //   }
+  // }, [spinSuccess])
+
   useEffect(() => {
-    if (spin && spinShow) {
+    if (spinShow && spinNumber) {
       let prevSpins: string[] = JSON.parse(localStorage.getItem("spins") || "[]");
       if (prevSpins.length > 10) prevSpins.pop();
-      localStorage.setItem("spins", JSON.stringify([spin, ...prevSpins]));
+      localStorage.setItem("spins", JSON.stringify([spinNumber, ...prevSpins]));
 
       setSpins(_prevSpins => {
         if (_prevSpins.length > 10) _prevSpins.pop();
-        return [spin, ..._prevSpins];
+        return [spinNumber, ..._prevSpins];
       });
     }
-  }, [spin, spinShow])
+  }, [spinShow])
 
   return (
     <Box
@@ -159,7 +175,8 @@ const Mining = ({messages} : IMining) => {
                   8082 TRX
                 </Typography>
               </Box>
-              <Wheel isActive={spinActive} setSpinShow={setSpinShow} setActive={setSpinActive} spin={spin} onSpin={setSpin} onClick={_spinNft} />
+              {/* <Wheel isActive={spinActive} setActive={setSpinActive} setSpinShow={setSpinShow}  spin={spin} onSpin={setSpin} onClick={_spinNft} /> */}
+              <Wheel spin={spinNumber} spinSuccess={spinSuccess} spinShow={setSpinShow} spinNft={_spinNft} spinChances={userInfo.spins}/>
               <Box
                 className="spin-action"
                 sx={{ backgroundColor: "common.black" }}
@@ -170,7 +187,7 @@ const Mining = ({messages} : IMining) => {
                   color="white"
                   mb="8px"
                 >
-                  Earned Spins: {spinShow && spin}
+                  Earned Spins: {spinShow && spinNumber}
                 </Typography>
               </Box>
             </Box>

@@ -9,20 +9,25 @@ import { getDayFromTimestamp, getHourFromTimestamp } from "utils/getDate";
 import { useEffect, useRef, useState } from "react";
  type StakedNftItemProps = {
   stakedDate: number;
+  claimedDate : number;
   address: string;
   id: number;
   mp: number;
   claimable: boolean;
   newtrons: number;
 };
- const StakedNftItem: React.FC<StakedNftItemProps> = ({ address, id, mp, claimable, stakedDate, newtrons }) => {
+ const StakedNftItem: React.FC<StakedNftItemProps> = ({ address, id, mp, claimable, stakedDate, claimedDate, newtrons }) => {
   const [walletAddress, setWallet] = useState("");
   const [disable, setDisable] = useState(false);
-  const [claimResult, setClaimResult] = useState<any>(null);
+  // const [claimResult, setClaimResult] = useState<any>(null);
    const dispatch = useDispatch<AppDispatch>();
   const { account } = useWeb3React();
-   const day = getDayFromTimestamp(stakedDate);
-  const hour = getHourFromTimestamp(stakedDate);
+  const stakedDay = getDayFromTimestamp(stakedDate);
+  const stakedHour = getHourFromTimestamp(stakedDate);
+  
+  const claimedDay = getDayFromTimestamp(claimedDate);
+  const claimedHour = getHourFromTimestamp(claimedDate);
+
    useEffect(() => {
     if (account && account !== "") {
       setWallet(account);
@@ -38,28 +43,29 @@ import { useEffect, useRef, useState } from "react";
     )
   }
    async function _claimNft() {
-    let result = await dispatch(
+    await dispatch(
       claimNft({
         tokenId: id,
         address,
         walletAddress
       })
     );
-    setClaimResult(result);
+    //setClaimResult(result);
   }
-   useEffect(() => {
-    if (claimResult && claimResult.meta.requestStatus === 'fulfilled') {
-      setDisable(true);
-    }
-  }, [claimResult]);
+  //  useEffect(() => {
+  //   if (claimResult && claimResult.meta.requestStatus === 'fulfilled') {
+  //     setDisable(true);
+  //   }
+  // }, [claimResult]);
   
-   useEffect(() => {
-    if (disable) {
-      setTimeout(() => {
-          setDisable(false);
-      }, 4 * 60 * 1000);
-    }
-  }, [disable]);
+  //  useEffect(() => {
+  //   if (disable) {
+  //     setTimeout(() => {
+  //         setDisable(false);
+  //     }, 4 * 60 * 1000);
+  //   }
+  // }, [disable]);
+
    return (
     <>
       <TableRow
@@ -87,10 +93,26 @@ import { useEffect, useRef, useState } from "react";
             fontFamily="Audiowide"
             mb="4px"
           >
-            {day}
+            {stakedDay}
           </Typography>
           <Typography color="white" fontSize="14px" fontFamily="Audiowide">
-            {hour}
+            {stakedHour}
+          </Typography>
+        </TableCell>
+        <TableCell sx={{ borderBottom: "none" }}>
+          <Typography color="white" fontSize="14px" mb="4px">
+            last claim time
+          </Typography>
+          <Typography
+            color="white"
+            fontSize="18px"
+            fontFamily="Audiowide"
+            mb="4px"
+          >
+            {claimedDay}
+          </Typography>
+          <Typography color="white" fontSize="14px" fontFamily="Audiowide">
+            {claimedHour}
           </Typography>
         </TableCell>
         <TableCell sx={{ borderBottom: "none" }}>

@@ -27,16 +27,17 @@ const Home = ({messages} : IHome) => {
     return [];
   });
 
-  const _rareNfts = useSelector<IReduxState, Array<{collection : string, tokenId : number, newtrons : number, protons : number, mp : number, stakedTimeStamp : number, claimedTimeStamp : number, claimable : boolean}>>(state => {
-    if (state.nft) {
-      return state.nft.rareNfts;
-    }
-    return [];
-  });
+  // const stakedNfts = useSelector<IReduxState, Array<{collection : string, tokenId : number, newtrons : number, protons : number, mp : number, stakedTimeStamp : number, claimedTimeStamp : number, claimable : boolean}>>(state => {
+  //   if (state.nft) {
+  //     return state.nft.stak;
+  //   }
+  //   return [];
+  // });
 
-  const recentNfts = stakedNfts.slice().sort((a, b) => a.stakedTimeStamp - b.stakedTimeStamp);
+  let recentNfts = stakedNfts.slice().sort((a, b) => a.stakedTimeStamp - b.stakedTimeStamp);
 
-  const rareNfts = _rareNfts.slice().sort((a, b) => a.mp - b.mp);
+  let rareNfts = stakedNfts.slice().sort((a, b) => a.mp - b.mp);
+  if (rareNfts.length > 10) rareNfts = rareNfts.slice(0, 10);
 
   return (
     <Box sx={{ backgroundColor: "common.black" }}>

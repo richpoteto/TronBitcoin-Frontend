@@ -2,8 +2,8 @@
 export const getDayFromTimestamp = (timeStamp : number) => {
     var date = new Date(timeStamp * 1000);
     var year = date.getFullYear();
-    var month = "0" + (date.getMonth() + 1);
-    var day = "0" + date.getDate();
+    var month = (date.getMonth() + 1);
+    var day = date.getDate();
 
     return year + ":" + month + ":" + day;
 }

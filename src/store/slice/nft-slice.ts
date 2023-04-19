@@ -288,11 +288,12 @@ export const getStakedNftsFromUser = createAsyncThunk(
     }
 
     const indexes = await mainContract.getNftIndexesFromUserAddress(walletAddress).call();
-
+    console.log(indexes, 11111);
     let StakedNftsFromUser: any[] = [];
 
     for (let i = 0; i < indexes.length; i++) {
-      const nft = await mainContract.StakedNfts(indexes[i]).call();
+      console.log(indexes, 22222);
+      const nft = await mainContract.StakedNfts(indexes[i].toNumber()).call();
       StakedNftsFromUser.push({
         collection: nft.collection,
         tokenId: nft.tokenId.toNumber(),
@@ -324,24 +325,34 @@ export const getRareNfts = createAsyncThunk(
 
     let rareNfts: any[] = [], check = true;
 
-    for (let i = 0; i < 10; i++) {
-      const index = await mainContract.rareNfts(i).call();
-      if (index == 0 && !check) {
+    const count = await mainContract.stakedCounts().call();
+    console.log("countcountcount");
+    let index;
+    if (count.toNumber()) {
+      console.log(count.toNumber(), 9999);
+      for (let i = 0; i < 10; i++) {
+        index = await mainContract.rareNfts(i).call();
+        index = index.toNumber();
+        console.log(index, 8989898989);
+        if (index == 0 && !check) {
 
-      } else {
-        const nft = await mainContract.StakedNfts(index).call();
-        rareNfts.push({
-          collection: nft.collection,
-          tokenId: nft.tokenId.toNumber(),
-          newtrons: nft.newtrons.toNumber(),
-          protons: nft.protons.toNumber(),
-          mp: nft.mp.toNumber(),
-          stakedTimeStamp: nft.stakedTimeStamp.toNumber(),
-          claimedTimeStamp: nft.claimedTimeStamp.toNumber(),
-          claimable: nft.claimable
-        });
+        } else {
+          const nft = await mainContract.StakedNfts(index).call();
+          if (nft.mp.toNumber()) {
+            rareNfts.push({
+              collection: nft.collection,
+              tokenId: nft.tokenId.toNumber(),
+              newtrons: nft.newtrons.toNumber(),
+              protons: nft.protons.toNumber(),
+              mp: nft.mp.toNumber(),
+              stakedTimeStamp: nft.stakedTimeStamp.toNumber(),
+              claimedTimeStamp: nft.claimedTimeStamp.toNumber(),
+              claimable: nft.claimable
+            });
+          }
+        }
+        if (index == 0) check = false;
       }
-      if (index == 0) check = false;
     }
 
     return { rareNfts };
@@ -688,7 +699,6 @@ export const withDraw = createAsyncThunk(
 );
 
 interface IspinNft {
-  value: number;
   walletAddress: any
 }
 
@@ -697,7 +707,6 @@ export const spinNft = createAsyncThunk(
 
   async (
     {
-      value,
       walletAddress
     }: IspinNft,
     { dispatch }
@@ -708,7 +717,7 @@ export const spinNft = createAsyncThunk(
 
         let enterTx, receipt = null, i = 0;
         try {
-          enterTx = await mainContract.spin(value).send({ feeLimit: 100000000 });
+          enterTx = await mainContract.spin().send({ feeLimit: 100000000 });
 
           await new Promise((resolve) => setTimeout(resolve, 2000));
 
@@ -741,7 +750,11 @@ export const spinNft = createAsyncThunk(
           } else {
             notification({ title: "Sorry, you didn't hit the 7, so can't get proton token! Try it again!", type: "warning" });
           }
-          return;
+          console.log(status.spinNumber.toNumber(), 888);
+          return {
+            spinNumber: status.spinNumber.toNumber(),
+            spinSuccess: true
+          };
         } catch (err: any) {
           console.log(err);
           throw err;
@@ -763,7 +776,9 @@ export interface ONftSlice {
   update: { approved: Boolean, staked: Boolean, claimed: Boolean, withdrawed: Boolean };
   userInfo: { newtrons: number, protons: number, spins: number },
   status: { totalNewTrons: number, totalProtons: number },
-  whiteLists: Array<[number, string, boolean, number, string]>
+  whiteLists: Array<[number, string, boolean, number, string]>,
+  spinNumber: number,
+  spinSuccess: boolean
 }
 
 const initialState: ONftSlice = {
@@ -777,14 +792,16 @@ const initialState: ONftSlice = {
   update: { approved: false, staked: false, claimed: false, withdrawed: false },
   userInfo: { newtrons: 0, protons: 0, spins: 0 },
   status: { totalNewTrons: 0, totalProtons: 0 },
-  whiteLists: []
+  whiteLists: [],
+  spinNumber: 0,
+  spinSuccess: true
 };
 
 const nftSlice = createSlice({
   name: "nft",
   initialState,
   reducers: {
-    fetchAppSuccess(state, action) {
+    setNftVariables(state, action) {
       setAll(state, action.payload);
     },
   },
@@ -981,13 +998,16 @@ const nftSlice = createSlice({
 
       ////////////
       .addCase(spinNft.pending, (state, action) => {
-        state.loading = true;
+        //state.loading = true;
       })
       .addCase(spinNft.fulfilled, (state, action) => {
-        state.loading = false;
+        //state.loading = false;
+        setAll(state, action.payload);
       })
       .addCase(spinNft.rejected, (state, { error }) => {
-        state.loading = false;
+        //state.loading = false;
+        state.spinNumber = 0;
+        state.spinSuccess = false;
         console.log(error);
       })
   },
@@ -997,6 +1017,6 @@ const baseInfo = (state: RootState) => state.nft;
 
 export default nftSlice.reducer;
 
-export const { fetchAppSuccess } = nftSlice.actions;
+export const { setNftVariables } = nftSlice.actions;
 
 export const getAppState = createSelector(baseInfo, (nft) => nft);

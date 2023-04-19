@@ -16,7 +16,8 @@ import { useSelector } from "react-redux";
 import { useDispatch } from "react-redux";
 import { getNftsCount, getRareNfts, getStakedNfts, getStakedNftsFromUser, getStatus, getUserInfo, getWhilteLists } from "store/slice/nft-slice";
 import CircularProgress from '@mui/material/CircularProgress';
-import { Box } from "@mui/material";
+import { Box, Typography } from "@mui/material";
+
 const socket = socketIO('http://localhost:8001');
 
 function App() {
@@ -34,18 +35,18 @@ function App() {
   })
 
   async function getNftsAndCount(walletAddress: string) {
+    console.log(4444);
     let result1 = await dispatch(getStakedNfts({}));
     if (result1.meta.requestStatus === 'fulfilled') {
-      let result2 = await dispatch(getRareNfts({}));
-      if (result2.meta.requestStatus === 'fulfilled') {
-        let result3 = await dispatch(getStakedNftsFromUser({ walletAddress }));
-        if (result3.meta.requestStatus === 'fulfilled') {
-          let result4 = await dispatch(getWhilteLists({ account: walletAddress }));
-          if (result4.meta.requestStatus === 'fulfilled') {
+      console.log(3333);
+        let result2 = await dispatch(getStakedNftsFromUser({ walletAddress }));
+        if (result2.meta.requestStatus === 'fulfilled') {
+          console.log(1111);
+          let result3 = await dispatch(getWhilteLists({ account: walletAddress }));
+          if (result3.meta.requestStatus === 'fulfilled') {
             dispatch(getNftsCount({}));
           }
         }
-      }
     }
   }
 
@@ -85,7 +86,6 @@ function App() {
     }
   }, [account, update.staked]);
 
-
   useEffect(() => {
     if (account) {
       _getUserInfo();
@@ -109,20 +109,28 @@ function App() {
       <Provider store={store}>
         <ReactNotifications />
         <Header />
-        <div style={{ opacity: loading ? 0.2 : 1, pointerEvents: loading ? "none" : "auto" }}>
+        <div style={{ pointerEvents: loading ? "none" : "auto" }}>
           {loading &&
-            <Box sx={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)" }}>
-              <CircularProgress size={100} style={{ color: 'red' }} />
+            <Box sx={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex : 3 }}>
+              <CircularProgress size={200} style={{ color: 'rgba(0, 255, 0, 0.5)' }} />
+              <div>
+              <Typography variant="h2" style={{color : 'black', fontFamily : 'bold', textAlign : 'center'}}>Wait...</Typography>
+              </div>
             </Box>
           }
-          <Switch>
-            <Route exact path="/" component={() => <Home messages={messages} />} />
-            <Route exact path="/stake" component={() => <Stake messages={messages} />} />
-            <Route exact path="/mining-points" component={MiningPoints} />
-            <Route path="*">
-              <Redirect to="/" />
-            </Route>
-          </Switch>
+          <div style={{position : "relative", display : 'flex', flexWrap : 'wrap', height : 'max-content'}}>
+            <div style={{ position: "absolute", width: "100%", height: "100%", background: loading ? "rgba(255, 255, 255, 0.5)" : "rgba(255, 255, 255, 0)" }} />
+            <div>
+              <Switch>
+                <Route exact path="/" component={() => <Home messages={messages} />} />
+                <Route exact path="/stake" component={() => <Stake messages={messages} />} />
+                <Route exact path="/mining-points" component={MiningPoints} />
+                <Route path="*">
+                  <Redirect to="/" />
+                </Route>
+              </Switch>
+            </div>
+          </div>
         </div>
       </Provider>
     </>
