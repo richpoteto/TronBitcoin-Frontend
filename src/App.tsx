@@ -30,7 +30,7 @@ function App() {
     (state) => state.nft.loading
   )
 
-  const update = useSelector<IReduxState, { approved: Boolean, staked: Boolean, claimed: Boolean, withdrawed: Boolean }>(state => {
+  const update = useSelector<IReduxState, { approved: Boolean, staked: Boolean, claimed: Boolean, withdrawed: Boolean, spined : Boolean }>(state => {
     return state.nft.update
   })
 
@@ -90,7 +90,7 @@ function App() {
     if (account) {
       _getUserInfo();
     }
-  }, [account, update.claimed, update.withdrawed]);
+  }, [account, update.claimed, update.withdrawed, update.spined]);
 
   useEffect(() => {
     if (account) {

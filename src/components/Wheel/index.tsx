@@ -28,11 +28,12 @@ type wheelProps = {
   spinNft : () => void
 }
 
-const Wheel = ({ spin, spinSuccess, spinNft, spinChances, spinShow }: wheelProps) => {
+const Wheel = ({ spin, spinSuccess, spinNft, spinShow, spinChances }: wheelProps) => {
   const [angle, setAngle] = useState<number>(-90);
+  // const [number, setNumber] = useState(1);
   const [active, setActive] = useState<boolean>(false);
 
-  let interval : any, timeout : any;
+  let interval : any, timeout : any, a : number;
   const dispatch = useDispatch<AppDispatch>();
 
   const getA = () => {
@@ -42,9 +43,8 @@ const Wheel = ({ spin, spinSuccess, spinNft, spinChances, spinShow }: wheelProps
   }
 
   const selectClick = () => {
-    console.log(spinChances, 11111);
-    if (!spinChances) {
-      notification({ title: "You don't have spin opportunities!", type: "danger" });
+    if (spinChances) {
+      notification({title : "You don't have spin opportunites!", type : 'danger' });
       return;
     }
     if (!active) {
@@ -62,20 +62,18 @@ const Wheel = ({ spin, spinSuccess, spinNft, spinChances, spinShow }: wheelProps
       if (interval) clearInterval(interval);
       if (timeout) clearTimeout(timeout);
 
-      if (!spinSuccess) {
-        setActive(false);
-        return;
-      }
+      if (!spinSuccess) return;
 
       if (spin) delay = 3000;
       else delay = 100000;
 
       console.log(delay, time, interval, timeout, angle, getA(), spin, 22222);
-
+      
+      a = getA();
       interval = setInterval(() => {
         let delta = 0;
         if (spin) {
-          delta = 0.3 * getA() - 0.5 * getA() * (0.2 * time + 0.01);
+          delta = 0.3 * a - 0.5 * a * (0.2 * time + 0.01);
         } else {
           delta = 10;
         }
@@ -90,9 +88,6 @@ const Wheel = ({ spin, spinSuccess, spinNft, spinChances, spinShow }: wheelProps
         setActive(false);
         spinShow(true);
         dispatch(setNftVariables({spinNumber : 0}));
-        // if (angle + 90 >= 360) {
-        //   setAngle(angle - Math.floor((angle + 90) / 360) * 360);
-        // } 
       }, delay);
 
       return () => {

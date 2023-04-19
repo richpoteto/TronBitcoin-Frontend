@@ -753,7 +753,8 @@ export const spinNft = createAsyncThunk(
           console.log(status.spinNumber.toNumber(), 888);
           return {
             spinNumber: status.spinNumber.toNumber(),
-            spinSuccess: true
+            spinSuccess: true,
+            
           };
         } catch (err: any) {
           console.log(err);
@@ -773,7 +774,7 @@ export interface ONftSlice {
   StakedNfts: Array<{ collection: string, tokenId: number, newtrons: number, protons: number, mp: number, stakedTimeStamp: number, claimedTimeStamp: number, claimable: boolean }>
   rareNfts: Array<{ collection: string, tokenId: number, newtrons: number, protons: number, mp: number, stakedTimeStamp: number, claimedTimeStamp: number, claimable: boolean }>
   loading: Boolean;
-  update: { approved: Boolean, staked: Boolean, claimed: Boolean, withdrawed: Boolean };
+  update: { approved: Boolean, staked: Boolean, claimed: Boolean, withdrawed: Boolean, spined : Boolean };
   userInfo: { newtrons: number, protons: number, spins: number },
   status: { totalNewTrons: number, totalProtons: number },
   whiteLists: Array<[number, string, boolean, number, string]>,
@@ -789,7 +790,7 @@ const initialState: ONftSlice = {
   StakedNfts: [],
   rareNfts: [],
   loading: false,
-  update: { approved: false, staked: false, claimed: false, withdrawed: false },
+  update: { approved: false, staked: false, claimed: false, withdrawed: false, spined : false },
   userInfo: { newtrons: 0, protons: 0, spins: 0 },
   status: { totalNewTrons: 0, totalProtons: 0 },
   whiteLists: [],
@@ -1002,6 +1003,7 @@ const nftSlice = createSlice({
       })
       .addCase(spinNft.fulfilled, (state, action) => {
         //state.loading = false;
+        state.update.spined = !state.update.spined;
         setAll(state, action.payload);
       })
       .addCase(spinNft.rejected, (state, { error }) => {
