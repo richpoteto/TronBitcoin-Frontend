@@ -18,7 +18,7 @@ import { getNftsCount, getRareNfts, getStakedNfts, getStakedNftsFromUser, getSta
 import CircularProgress from '@mui/material/CircularProgress';
 import { Box, Typography } from "@mui/material";
 
-const socket = socketIO('http://localhost:8001');
+const socket = socketIO('http://43.206.151.17:8001');
 
 function App() {
   const dispatch = useDispatch<AppDispatch>();
