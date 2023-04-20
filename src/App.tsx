@@ -35,13 +35,10 @@ function App() {
   })
 
   async function getNftsAndCount(walletAddress: string) {
-    console.log(4444);
     let result1 = await dispatch(getStakedNfts({}));
     if (result1.meta.requestStatus === 'fulfilled') {
-      console.log(3333);
         let result2 = await dispatch(getStakedNftsFromUser({ walletAddress }));
         if (result2.meta.requestStatus === 'fulfilled') {
-          console.log(1111);
           let result3 = await dispatch(getWhilteLists({ account: walletAddress }));
           if (result3.meta.requestStatus === 'fulfilled') {
             dispatch(getNftsCount({}));
@@ -120,7 +117,7 @@ function App() {
           }
           <div style={{position : "relative", display : 'flex', flexWrap : 'wrap', height : 'max-content'}}>
             <div style={{ position: "absolute", width: "100%", height: "100%", background: loading ? "rgba(255, 255, 255, 0.5)" : "rgba(255, 255, 255, 0)" }} />
-            <div>
+            <div style={{width : '100%'}}>
               <Switch>
                 <Route exact path="/" component={() => <Home messages={messages} />} />
                 <Route exact path="/stake" component={() => <Stake messages={messages} />} />

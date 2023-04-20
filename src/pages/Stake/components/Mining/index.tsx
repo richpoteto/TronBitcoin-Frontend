@@ -25,7 +25,6 @@ const Mining = ({messages} : IMining) => {
   const [spins, setSpins] = useState<Array<number>>([]);
 
   const [spinShow, setSpinShow] = useState<boolean>(false);
-  // console.log(spin, spinShow, 90909090);
 
   const { account } = useWeb3React();
 
@@ -37,7 +36,6 @@ const Mining = ({messages} : IMining) => {
     return state.nft.spinNumber
   });
 
-  console.log("frontend", spinNumber);
   const spinSuccess = useSelector<IReduxState, boolean>(state => {
     return state.nft.spinSuccess
   });
@@ -83,18 +81,23 @@ const Mining = ({messages} : IMining) => {
   //   }
   // }, [spinSuccess])
 
-  useEffect(() => {
-    if (spinShow && spinNumber) {
-      let prevSpins: string[] = JSON.parse(localStorage.getItem("spins") || "[]");
-      if (prevSpins.length > 10) prevSpins.pop();
-      localStorage.setItem("spins", JSON.stringify([spinNumber, ...prevSpins]));
 
-      setSpins(_prevSpins => {
-        if (_prevSpins.length > 10) _prevSpins.pop();
-        return [spinNumber, ..._prevSpins];
-      });
-    }
-  }, [spinShow])
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (spinNumber && spinSuccess) {
+        let prevSpins: string[] = JSON.parse(localStorage.getItem("spins") || "[]");
+        if (prevSpins.length > 10) prevSpins.pop();
+        localStorage.setItem("spins", JSON.stringify([spinNumber, ...prevSpins]));
+  
+        setSpins(_prevSpins => {
+          if (_prevSpins.length > 10) _prevSpins.pop();
+          return [spinNumber, ..._prevSpins];
+        });
+      }
+    }, 10000);
+
+    return () => clearTimeout(timeoutId);
+  }, [spinSuccess, spinNumber])
 
   return (
     <Box
@@ -176,7 +179,9 @@ const Mining = ({messages} : IMining) => {
                 </Typography>
               </Box>
               {/* <Wheel isActive={spinActive} setActive={setSpinActive} setSpinShow={setSpinShow}  spin={spin} onSpin={setSpin} onClick={_spinNft} /> */}
-              <Wheel spin={spinNumber} spinSuccess={spinSuccess} spinShow={setSpinShow} spinNft={_spinNft} spinChances={userInfo.spins}/>
+              {/* <Wheel spin={spinNumber} spinSuccess={spinSuccess} spinShow={setSpinShow} spinNft={_spinNft} spinChances={userInfo.spins}/> */}
+              {console.log(spinNumber, spinSuccess, "console")}
+              <Wheel spinNumber={spinNumber} spinSuccess={spinSuccess} spinNft={_spinNft}/>
               <Box
                 className="spin-action"
                 sx={{ backgroundColor: "common.black" }}

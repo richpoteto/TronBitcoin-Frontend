@@ -288,11 +288,9 @@ export const getStakedNftsFromUser = createAsyncThunk(
     }
 
     const indexes = await mainContract.getNftIndexesFromUserAddress(walletAddress).call();
-    console.log(indexes, 11111);
     let StakedNftsFromUser: any[] = [];
 
     for (let i = 0; i < indexes.length; i++) {
-      console.log(indexes, 22222);
       const nft = await mainContract.StakedNfts(indexes[i].toNumber()).call();
       StakedNftsFromUser.push({
         collection: nft.collection,
@@ -326,14 +324,11 @@ export const getRareNfts = createAsyncThunk(
     let rareNfts: any[] = [], check = true;
 
     const count = await mainContract.stakedCounts().call();
-    console.log("countcountcount");
     let index;
     if (count.toNumber()) {
-      console.log(count.toNumber(), 9999);
       for (let i = 0; i < 10; i++) {
         index = await mainContract.rareNfts(i).call();
         index = index.toNumber();
-        console.log(index, 8989898989);
         if (index == 0 && !check) {
 
         } else {
@@ -546,7 +541,7 @@ export const claimNft = createAsyncThunk(
 
     let enterTx, receipt = null, i = 0;
     try {
-      enterTx = await mainContract.claimNFT(address, tokenId, false).send({ feeLimit: 100000000 });
+      enterTx = await mainContract.claimNFT(getTronAddress(address), tokenId, false).send({ feeLimit: 100000000 });
 
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
@@ -709,7 +704,7 @@ export const spinNft = createAsyncThunk(
     {
       walletAddress
     }: IspinNft,
-    { dispatch }
+    {  }
   ) => {
     if (window) {
       if (window.tronWeb && window.tronWeb.defaultAddress.base58) {
@@ -750,7 +745,6 @@ export const spinNft = createAsyncThunk(
           } else {
             notification({ title: "Sorry, you didn't hit the 7, so can't get proton token! Try it again!", type: "warning" });
           }
-          console.log(status.spinNumber.toNumber(), 888);
           return {
             spinNumber: status.spinNumber.toNumber(),
             spinSuccess: true,
@@ -795,7 +789,7 @@ const initialState: ONftSlice = {
   status: { totalNewTrons: 0, totalProtons: 0 },
   whiteLists: [],
   spinNumber: 0,
-  spinSuccess: true
+  spinSuccess: false
 };
 
 const nftSlice = createSlice({
