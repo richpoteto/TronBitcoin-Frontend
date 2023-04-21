@@ -18,7 +18,7 @@ import { getNftsCount, getRareNfts, getStakedNfts, getStakedNftsFromUser, getSta
 import CircularProgress from '@mui/material/CircularProgress';
 import { Box, Typography } from "@mui/material";
 
-const socket = socketIO('http://43.206.151.17:8001');
+const socket = socketIO('http://43.206.151.17');
 
 function App() {
   const dispatch = useDispatch<AppDispatch>();
@@ -109,9 +109,8 @@ function App() {
         <div style={{ pointerEvents: loading ? "none" : "auto" }}>
           {loading &&
             <Box sx={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex : 3 }}>
-              <CircularProgress size={200} style={{ color: 'rgba(0, 255, 0, 0.5)' }} />
+              <CircularProgress size={150} style={{ color: 'rgba(255, 255, 255, 1)' }} />
               <div>
-              <Typography variant="h2" style={{color : 'black', fontFamily : 'bold', textAlign : 'center'}}>Wait...</Typography>
               </div>
             </Box>
           }

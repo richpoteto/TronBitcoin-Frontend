@@ -19,6 +19,7 @@ const settings = {
   infinite: true,
   speed: 2000,
   // autoplay: true,
+  arrows : false,
   autoplaySpeed: 2000,
   slidesToShow: 5,
   slidesToScroll: 1,
@@ -54,7 +55,7 @@ const settings = {
 
 interface IActionFeed {
   nfts: Array<any>,
-  messages : Array<string>
+  messages: Array<string>
 }
 
 const ActionFeed = ({ nfts, messages }: IActionFeed) => {
@@ -168,7 +169,7 @@ const ActionFeed = ({ nfts, messages }: IActionFeed) => {
         </Typography>
         <Box
           className="slider-content"
-          sx={{ backgroundColor: "primary.light", height : 300}}
+          sx={{ backgroundColor: "primary.light", height: 300 }}
         >
           <Slider {...settings}>
             {

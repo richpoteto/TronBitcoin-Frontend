@@ -94,7 +94,7 @@ const Mining = ({messages} : IMining) => {
           return [spinNumber, ..._prevSpins];
         });
       }
-    }, 10000);
+    }, 15000);
 
     return () => clearTimeout(timeoutId);
   }, [spinSuccess, spinNumber])
@@ -178,10 +178,7 @@ const Mining = ({messages} : IMining) => {
                   8082 TRX
                 </Typography>
               </Box>
-              {/* <Wheel isActive={spinActive} setActive={setSpinActive} setSpinShow={setSpinShow}  spin={spin} onSpin={setSpin} onClick={_spinNft} /> */}
-              {/* <Wheel spin={spinNumber} spinSuccess={spinSuccess} spinShow={setSpinShow} spinNft={_spinNft} spinChances={userInfo.spins}/> */}
-              {console.log(spinNumber, spinSuccess, "console")}
-              <Wheel spinNumber={spinNumber} spinSuccess={spinSuccess} spinNft={_spinNft}/>
+              <Wheel spinNumber={spinNumber} spinSuccess={spinSuccess} spinNft={_spinNft} opportunites={userInfo.spins}/>
               <Box
                 className="spin-action"
                 sx={{ backgroundColor: "common.black" }}

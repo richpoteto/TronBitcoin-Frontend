@@ -22,6 +22,7 @@ const settings = {
   slidesToShow: 7,
   slidesToScroll: 7,
   cssEase: "linear",
+  arrows : false,
   responsive: [
     {
       breakpoint: 1536,
@@ -118,9 +119,10 @@ const ActionList = ({ nfts }: IActionList) => {
           Most Recently Staked NFT's
         </Typography>
         <Box
-          className="carousel"
+          className="slider-content"
           sx={{
             backgroundColor: "primary.light",
+            height : 300
           }}
         >
           <Slider {...settings}>

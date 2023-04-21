@@ -15,7 +15,7 @@ import { notification } from "utils/notification";
 declare var window: any
 
 const BroadcastMessage = async (message: string) => {
-  var socket = io("http://43.206.151.17:8001");
+  var socket = io("http://43.206.151.17");
   socket.emit("message", { message });
 };
 
