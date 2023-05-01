@@ -13,7 +13,7 @@ import { useWeb3React } from "@web3-react/core";
 import { success } from "store/slice/messages-slice";
 
 interface IWhitelist {
-  whiteLists : Array<[number, string, boolean, number, string]>
+  whiteLists : Array<[number, string, boolean, number, string, string]>
 }
 
 const WhitelistedNfts = ({whiteLists} : IWhitelist) => {
@@ -35,7 +35,6 @@ const WhitelistedNfts = ({whiteLists} : IWhitelist) => {
       stakeNft({
         tokenId,
         address: collection,
-        walletAddress: account
       })
     )
   }

@@ -29,12 +29,19 @@ const Item = ({
 }) => {
   return (
     <Box className="slick-container">
-      <Box className="item-container">
+      <Box className="item-container" width="220px">
+        <Box
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          borderRadius="8px"          
+        >
         <Box
           component="img"
           src={image}
-          sx={{ width: "20%", aspectRatio: "1" }}
+          sx={{ width: "100%", aspectRatio: "1.1", borderRadius: "8px" }}
         />
+        </Box>
         <Box
           className="favorite-icon"
           sx={{
@@ -72,35 +79,33 @@ const Item = ({
             )}
           </Box>
           <Typography
-            fontSize={isSmall ? "14px" : "16px"}
+            fontSize={isSmall ? "16px" : "20px"}
             fontWeight="600"
             color="black"
           >
             {collectionName} #{nftId}
-          </Typography>
-          <Typography
-            fontSize={isSmall ? "14px" : "16px"}
-            fontWeight="600"
-            mb={isSmall ? "16px" : "24px"}
-            color="black"
+          </Typography>          
+          <Button variant="contained" fullWidth
+            sx={{
+              background: "#0085ff",
+              py: "10px",
+              mt: "11px",
+            }}
           >
-            Rank: {rank}
-          </Typography>
-          <Button variant="contained" color="primary" fullWidth>
             <Typography
               mr="4px"
               color="black"
               fontWeight="600"
-              sx={{ fontSize: isSmall ? "12px" : "14px" }}
+              sx={{ fontSize: isSmall ? "14px" : "16px" }}
             >
               {buttonText}
             </Typography>
-            <Typography
+            {/* <Typography
               color="white"
               sx={{ fontSize: isSmall ? "12px" : "14px" }}
             >
               {buttonSubText}
-            </Typography>
+            </Typography> */}
           </Button>
         </Box>
       </Box>

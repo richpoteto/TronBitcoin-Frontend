@@ -6,60 +6,63 @@ import { AppDispatch } from "state";
 import { useCallback, useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import "./mining.scss";
-import BackgroundImage from "assets/images/stake_background.png";
+import BackgroundImage from "assets/images/stake_background.webp";
 import { claimAll, spinNft, withDraw } from "store/slice/nft-slice";
 import { useSelector } from "react-redux";
 import { IReduxState } from "store/slice/state.interface";
 import { useWeb3React } from "@web3-react/core";
 
-interface IMining {
-  messages : Array<string>
-}
-const Mining = ({messages} : IMining) => {
-  const dispatch = useDispatch<AppDispatch>();
+import TronIcon from "../../../../assets/images/tron.png";
 
-  // const [spin, setSpin] = useState<number>(0);
- 
-  const [spinActive, setSpinActive] = useState(false);
+interface IMining {
+  messages: Array<string>;
+}
+const Mining = ({ messages }: IMining) => {
+  const dispatch = useDispatch<AppDispatch>();
 
   const [spins, setSpins] = useState<Array<number>>([]);
 
-  const [spinShow, setSpinShow] = useState<boolean>(false);
-
   const { account } = useWeb3React();
 
-  const userInfo = useSelector<IReduxState, { newtrons: number, protons: number, spins: number }>(state => {
-    return state.nft.userInfo
+  const userInfo = useSelector<
+    IReduxState,
+    { newtrons: number; protons: number; spins: number }
+  >((state) => {
+    return state.nft.userInfo;
   });
 
-  const spinNumber = useSelector<IReduxState, number>(state => {
-    return state.nft.spinNumber
+  const spinNumber = useSelector<IReduxState, number>((state) => {
+    return state.nft.spinNumber;
   });
 
-  const spinSuccess = useSelector<IReduxState, boolean>(state => {
-    return state.nft.spinSuccess
+  const spinSuccess = useSelector<IReduxState, boolean>((state) => {
+    return state.nft.spinSuccess;
+  });
+
+  const status = useSelector<IReduxState, { totalNewTrons: number, totalProtons: number }>(state => {
+    return state.nft.status
   });
 
   async function _claimAll() {
     await dispatch(
       claimAll({
-        walletAddress: account
+        walletAddress: account,
       })
-    )
+    );
   }
 
   async function _withDraw() {
     await dispatch(
       withDraw({
-        walletAddress: account
+        walletAddress: account,
       })
-    )
+    );
   }
 
   async function _spinNft() {
     await dispatch(
       spinNft({
-        walletAddress: account
+        walletAddress: account,
       })
     );
   }
@@ -67,7 +70,7 @@ const Mining = ({messages} : IMining) => {
   // const handleSpinChange = (newSpinValue : number) => {
   //   setSpin(newSpinValue);
   // }
-  
+
   useEffect(() => {
     const prevSpins = localStorage.getItem("spins");
     if (prevSpins) {
@@ -81,15 +84,19 @@ const Mining = ({messages} : IMining) => {
   //   }
   // }, [spinSuccess])
 
-
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (spinNumber && spinSuccess) {
-        let prevSpins: string[] = JSON.parse(localStorage.getItem("spins") || "[]");
+        let prevSpins: string[] = JSON.parse(
+          localStorage.getItem("spins") || "[]"
+        );
         if (prevSpins.length > 10) prevSpins.pop();
-        localStorage.setItem("spins", JSON.stringify([spinNumber, ...prevSpins]));
-  
-        setSpins(_prevSpins => {
+        localStorage.setItem(
+          "spins",
+          JSON.stringify([spinNumber, ...prevSpins])
+        );
+
+        setSpins((_prevSpins) => {
           if (_prevSpins.length > 10) _prevSpins.pop();
           return [spinNumber, ..._prevSpins];
         });
@@ -97,7 +104,7 @@ const Mining = ({messages} : IMining) => {
     }, 15000);
 
     return () => clearTimeout(timeoutId);
-  }, [spinSuccess, spinNumber])
+  }, [spinSuccess, spinNumber]);
 
   return (
     <Box
@@ -109,8 +116,14 @@ const Mining = ({messages} : IMining) => {
         backgroundRepeat: "no-repeat",
       }}
     >
-      <Typography fontSize="18px" color="white" textAlign="center" py="16px">
-        Every 1000th proton mined triggers Jackpot!
+      <Typography
+        fontSize="20px"
+        color="white"
+        fontFamily="Audiowide"
+        textAlign="center"
+        py="16px"
+      >
+        Every 1000th newtron mined triggers Jackpot!
       </Typography>
       <Container maxWidth="xl" sx={{ py: "24px" }}>
         <Box
@@ -143,22 +156,25 @@ const Mining = ({messages} : IMining) => {
               >
                 Action Feed:
               </Typography>
-              {
-                messages.map((message, index) =>
-                  <Typography key={index} variant="inherit" fontFamily="LucidaSans" mb="8px">
-                    <Typography
-                      component="span"
-                      fontFamily="LucidaSans"
-                      color="primary.dark"
-                      sx={{
-                        wordBreak: 'break-all'
-                      }}
-                    >
-                      {message}
-                    </Typography>
+              {messages.map((message, index) => (
+                <Typography
+                  key={index}
+                  variant="inherit"
+                  fontFamily="LucidaSans"
+                  mb="8px"
+                >
+                  <Typography
+                    component="span"
+                    fontFamily="LucidaSans"
+                    color="primary.white"
+                    sx={{
+                      wordBreak: "break-all",
+                    }}
+                  >
+                    {message}
                   </Typography>
-                )
-              }
+                </Typography>
+              ))}
             </Box>
           </Box>
           <Box className="mining-container">
@@ -173,25 +189,34 @@ const Mining = ({messages} : IMining) => {
                 mb: "16px",
               }}
             >
-              <Box className="proton-amount">
-                <Typography fontSize="24px" fontWeight="600" color="white">
-                  8082 TRX
-                </Typography>
-              </Box>
-              <Wheel spinNumber={spinNumber} spinSuccess={spinSuccess} spinNft={_spinNft} opportunites={userInfo.spins}/>
               <Box
-                className="spin-action"
-                sx={{ backgroundColor: "common.black" }}
+                className="proton-amount"
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
               >
+                <Box
+                  component="img"
+                  src={TronIcon}
+                  width="32px"
+                  height="32px"
+                  alt=""
+                  mr="8px"
+                />
                 <Typography
-                  fontSize="18px"
+                  fontSize="24px"
                   fontWeight="600"
-                  color="white"
-                  mb="8px"
+                  color="rgb(255, 184, 0)"
                 >
-                  Earned Spins: {spinShow && spinNumber}
+                  {status.totalNewTrons}
                 </Typography>
               </Box>
+              <Wheel
+                spinNumber={spinNumber}
+                spinSuccess={spinSuccess}
+                spinNft={_spinNft}
+                opportunites={userInfo.spins}
+              />
             </Box>
             <Box
               className="mining-content"
@@ -208,7 +233,7 @@ const Mining = ({messages} : IMining) => {
                   color="primary.light"
                   fontSize="28px"
                 >
-                  NeuTron
+                  Proton
                 </Typography>{" "}
                 Mining
               </Typography>
@@ -234,11 +259,15 @@ const Mining = ({messages} : IMining) => {
                         color="primary.light"
                         fontSize="14px"
                       >
-                        NEU
+                        Pro
                       </Typography>
                     </Typography>
                   </Box>
-                  <Button variant="contained" sx={{ whiteSpace: "nowrap" }} onClick={_claimAll}>
+                  <Button
+                    variant="contained"
+                    sx={{ whiteSpace: "nowrap" }}
+                    onClick={_claimAll}
+                  >
                     Claim all
                     <ArrowRightAltOutlinedIcon />
                   </Button>
@@ -272,7 +301,7 @@ const Mining = ({messages} : IMining) => {
                       color="primary.light"
                       fontSize="14px"
                     >
-                      NEU
+                      Protons
                     </Typography>
                   </Typography>
                   <Typography color="white" fontSize="14px">
@@ -288,24 +317,29 @@ const Mining = ({messages} : IMining) => {
                     mt: { xs: "24px", sm: 0 },
                   }}
                 >
-                  <Typography component = "div" color="white" fontSize="14px" >
+                  <Typography component="div" color="white" fontSize="14px">
                     Available: new {userInfo.newtrons}
                     <Typography
                       component="div"
                       color="primary.light"
                       fontSize="14px"
                     >
-                      NEU
+                      PRO
                     </Typography>
                   </Typography>
-                  <Typography component = "div" color="white" fontSize="14px" mb="8px">
+                  <Typography
+                    component="div"
+                    color="white"
+                    fontSize="14px"
+                    mb="8px"
+                  >
                     Available: new {userInfo.protons}
                     <Typography
                       component="span"
                       color="secondary.main"
                       fontSize="14px"
                     >
-                      PRO
+                      NEW
                     </Typography>
                   </Typography>
                   <Button variant="contained" onClick={_withDraw}>
@@ -345,23 +379,26 @@ const Mining = ({messages} : IMining) => {
                 mb="24px"
                 className="card-desc-title"
               >
-                Proton spin history
+                Newtron spin history
               </Typography>
-              {
-                spins.map((s, i) => {
-                  if (s == 7) return <Typography
-                    variant="inherit"
-                    fontFamily="LucidaSans"
-                    color="secondary.main"
-                  >
-                    7 (1 Proton Mined) #38
-                  </Typography>
-                  else return <Typography variant="inherit" fontFamily="LucidaSans">
-                    {s}
-                  </Typography>
-                }
-                )
-              }
+              {spins.map((s, i) => {
+                if (s == 7)
+                  return (
+                    <Typography
+                      variant="inherit"
+                      fontFamily="LucidaSans"
+                      color="secondary.main"
+                    >
+                      7 (1 Proton Mined) #{userInfo.newtrons}
+                    </Typography>
+                  );
+                else
+                  return (
+                    <Typography variant="inherit" fontFamily="LucidaSans">
+                      {s}
+                    </Typography>
+                  );
+              })}
             </Box>
           </Box>
         </Box>

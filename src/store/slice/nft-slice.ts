@@ -57,6 +57,8 @@ export const getWhilteLists = createAsyncThunk(
         for (let i = 0; i < whitelistNfts.length; i++) {
           let nft = await window.tronWeb.contract().at(tronWeb.address.toHex(whitelistNfts[i]));
 
+          let collectionName = await nft.name().call();
+
           let nft_counts = await nft.balanceOf(account).call();
 
           let temp: any[] = [];
@@ -69,11 +71,15 @@ export const getWhilteLists = createAsyncThunk(
             let nfturi = `https://ipfs.io/ipfs/${nfturl.slice(7, 53)}/${nfturl
               }.png`;
 
+            //let nfturi = `https://ipfs.io/ipfs/${nftur.slice(7, 53)}/${
+            //  nftid
+            //}.png`;;
+
             const approvedAddress = await nft.getApproved(nftid).call();
             const isApprove = tronWeb.address.fromHex(approvedAddress).toLowerCase() == ShataTestnet.MAIN_ADDRESS.toLowerCase();
             const mp = await mainContract.getMpOfToken(whitelistNfts[i], nftid).call();
 
-            temp.push([nftid, whitelistNfts[i], isApprove, mp.toNumber(), nfturi]);
+            temp.push([nftid, whitelistNfts[i], isApprove, mp.toNumber(), nfturi, collectionName]);
           }
           nfts.push(temp.sort((a, b) => a[0] - b[0]));
         }
@@ -206,7 +212,7 @@ export const getMps = createAsyncThunk(
 interface IsetApprove {
   id: Number;
   collection: string;
-  whiteLists: Array<[number, string, boolean, number, string]>
+  whiteLists: Array<[number, string, boolean, number, string, string]>
 }
 
 export const setApprove = createAsyncThunk(
@@ -292,8 +298,12 @@ export const getStakedNftsFromUser = createAsyncThunk(
 
     for (let i = 0; i < indexes.length; i++) {
       const nft = await mainContract.StakedNfts(indexes[i].toNumber()).call();
+      const nftContract = await window.tronWeb.contract().at(tronWeb.address.toHex(nft.collection));
+      const nftName = await nftContract.name().call();
+
       StakedNftsFromUser.push({
         collection: nft.collection,
+        nftName,
         tokenId: nft.tokenId.toNumber(),
         newtrons: nft.newtrons.toNumber(),
         protons: nft.protons.toNumber(),
@@ -305,52 +315,6 @@ export const getStakedNftsFromUser = createAsyncThunk(
     }
 
     return { StakedNftsFromUser };
-  }
-);
-
-interface IGetRareNfts { }
-
-export const getRareNfts = createAsyncThunk(
-  "nft/getRareNfts",
-  async ({ }: IGetRareNfts) => {
-    let mainContract: any;
-
-    if (window) {
-      if (window.tronWeb && window.tronWeb.defaultAddress.base58) {
-        mainContract = await window.tronWeb.contract().at(tronWeb.address.toHex(ShataTestnet.MAIN_ADDRESS));
-      }
-    }
-
-    let rareNfts: any[] = [], check = true;
-
-    const count = await mainContract.stakedCounts().call();
-    let index;
-    if (count.toNumber()) {
-      for (let i = 0; i < 10; i++) {
-        index = await mainContract.rareNfts(i).call();
-        index = index.toNumber();
-        if (index == 0 && !check) {
-
-        } else {
-          const nft = await mainContract.StakedNfts(index).call();
-          if (nft.mp.toNumber()) {
-            rareNfts.push({
-              collection: nft.collection,
-              tokenId: nft.tokenId.toNumber(),
-              newtrons: nft.newtrons.toNumber(),
-              protons: nft.protons.toNumber(),
-              mp: nft.mp.toNumber(),
-              stakedTimeStamp: nft.stakedTimeStamp.toNumber(),
-              claimedTimeStamp: nft.claimedTimeStamp.toNumber(),
-              claimable: nft.claimable
-            });
-          }
-        }
-        if (index == 0) check = false;
-      }
-    }
-
-    return { rareNfts };
   }
 );
 
@@ -381,26 +345,34 @@ export const getStakedNfts = createAsyncThunk(
       }
     }
 
-    const StakedNfts = allStakedNfts.map((nft: any) => {
-      return {
-        collection: nft.collection,
-        tokenId: nft.tokenId.toNumber(),
-        newtrons: nft.newtrons.toNumber(),
-        protons: nft.protons.toNumber(),
-        mp: nft.mp.toNumber(),
-        stakedTimeStamp: nft.stakedTimeStamp.toNumber(),
-        claimedTimeStamp: nft.claimedTimeStamp.toNumber(),
-        claimable: nft.claimable
-      }
-    })
+    let StakedNfts : any[] = [];
 
+    for (let i = 0; i < allStakedNfts.length; i++) {
+      const nft = allStakedNfts[i];
+      const nftContract = await window.tronWeb.contract().at(tronWeb.address.toHex(nft.collection));
+      const nftName = await nftContract.name().call();
+
+      StakedNfts.push(
+        {
+          collection: nft.collection,
+          nftName,
+          tokenId: nft.tokenId.toNumber(),
+          newtrons: nft.newtrons.toNumber(),
+          protons: nft.protons.toNumber(),
+          mp: nft.mp.toNumber(),
+          stakedTimeStamp: nft.stakedTimeStamp.toNumber(),
+          claimedTimeStamp: nft.claimedTimeStamp.toNumber(),
+          claimable: nft.claimable
+        })
+    }
+
+    console.log(StakedNfts, 55555);
     return { StakedNfts };
   }
 );
 
 interface IstakeSlice {
   tokenId: Number;
-  walletAddress: any,
   address: string;
 }
 
@@ -410,7 +382,6 @@ export const stakeNft = createAsyncThunk(
     {
       tokenId,
       address,
-      walletAddress
     }: IstakeSlice,
     { }
   ) => {
@@ -444,13 +415,10 @@ export const stakeNft = createAsyncThunk(
       }
 
       notification({ title: "Successfully staked!", type: "success" });
-      const tronWallet = getTronAddress(walletAddress), tronCollection = getTronAddress(address);
-      BroadcastMessage(`${tronWallet.slice(0, 4)}...${tronWallet.slice(-4)}` + " staked tokenId " + tokenId + " at NFT collection " + `${tronCollection.slice(0, 4)}...${tronCollection.slice(-4)}`);
       return;
     } catch (err: any) {
       console.log(err);
       throw err;
-      //notification({ title: "Something went wrong! Try again!", type: "danger" });
     }
   }
 );
@@ -704,7 +672,7 @@ export const spinNft = createAsyncThunk(
     {
       walletAddress
     }: IspinNft,
-    {  }
+    { }
   ) => {
     if (window) {
       if (window.tronWeb && window.tronWeb.defaultAddress.base58) {
@@ -748,7 +716,7 @@ export const spinNft = createAsyncThunk(
           return {
             spinNumber: status.spinNumber.toNumber(),
             spinSuccess: true,
-            
+
           };
         } catch (err: any) {
           console.log(err);
@@ -764,14 +732,14 @@ export interface ONftSlice {
   approve: Array<Boolean>,
   mps: Array<Number>,
   stakedCounts: number,
-  StakedNftsFromUser: Array<{ collection: string, tokenId: number, newtrons: number, protons: number, mp: number, stakedTimeStamp: number, claimedTimeStamp: number, claimable: boolean }>
-  StakedNfts: Array<{ collection: string, tokenId: number, newtrons: number, protons: number, mp: number, stakedTimeStamp: number, claimedTimeStamp: number, claimable: boolean }>
+  StakedNftsFromUser: Array<{ collection: string, nftName: string, tokenId: number, newtrons: number, protons: number, mp: number, stakedTimeStamp: number, claimedTimeStamp: number, claimable: boolean }>
+  StakedNfts: Array<{ collection: string, nftName: string, tokenId: number, newtrons: number, protons: number, mp: number, stakedTimeStamp: number, claimedTimeStamp: number, claimable: boolean }>
   rareNfts: Array<{ collection: string, tokenId: number, newtrons: number, protons: number, mp: number, stakedTimeStamp: number, claimedTimeStamp: number, claimable: boolean }>
   loading: Boolean;
-  update: { approved: Boolean, staked: Boolean, claimed: Boolean, withdrawed: Boolean, spined : Boolean };
+  update: { approved: Boolean, staked: Boolean, claimed: Boolean, withdrawed: Boolean, spined: Boolean };
   userInfo: { newtrons: number, protons: number, spins: number },
   status: { totalNewTrons: number, totalProtons: number },
-  whiteLists: Array<[number, string, boolean, number, string]>,
+  whiteLists: Array<[number, string, boolean, number, string, string]>,
   spinNumber: number,
   spinSuccess: boolean
 }
@@ -784,7 +752,7 @@ const initialState: ONftSlice = {
   StakedNfts: [],
   rareNfts: [],
   loading: false,
-  update: { approved: false, staked: false, claimed: false, withdrawed: false, spined : false },
+  update: { approved: false, staked: false, claimed: false, withdrawed: false, spined: false },
   userInfo: { newtrons: 0, protons: 0, spins: 0 },
   status: { totalNewTrons: 0, totalProtons: 0 },
   whiteLists: [],
@@ -824,18 +792,6 @@ const nftSlice = createSlice({
         state.loading = false;
       })
       .addCase(getWhilteLists.rejected, (state, { error }) => {
-        state.loading = false;
-      })
-
-      /////////////
-      .addCase(getRareNfts.pending, (state, action) => {
-        state.loading = true;
-      })
-      .addCase(getRareNfts.fulfilled, (state, action) => {
-        setAll(state, action.payload);
-        state.loading = false;
-      })
-      .addCase(getRareNfts.rejected, (state, { error }) => {
         state.loading = false;
       })
 

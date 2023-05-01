@@ -3,7 +3,7 @@ import PointLists from "./components/PointLists";
 import Tokenomics from "./components/Tokenomics";
 // import Chart from "./components/Chart";
 import "./mining-points.scss";
-import LogoImage from "assets/images/neutron-logo.png";
+import LogoImage from "assets/images/mobile_logo.png";
 import SpinImage from "assets/images/spin1.png";
 
 const MiningPoints = () => {

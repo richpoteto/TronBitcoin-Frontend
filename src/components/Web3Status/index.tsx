@@ -60,7 +60,21 @@ function Web3StatusInner() {
 
   if (account) {
     return (
-      <Button variant="contained" color="primary" onClick={toggleWalletModal}>
+      <Button
+        variant="contained"
+        onClick={toggleWalletModal}
+        sx={{
+          borderRadius: "8px",
+          textTransform: "capitalize",
+          height: "40px",
+          lineHeight: "normal",
+          p: "8px 16px",
+          border: "1px solid rgba(255, 255, 255, 0.12)",
+          color: "rgb(236, 232, 227)",
+          background: "rgb(29, 26, 21)",
+          "&:hover": { background: "rgb(43, 42, 42)" },
+        }}
+      >
         {hasPendingTransactions ? (
           <>
             <Typography mr="8px">{pending?.length} Pending</Typography>{" "}
@@ -91,7 +105,21 @@ function Web3StatusInner() {
   } else {
     return (
       <>
-        <Button variant="contained" color="primary" onClick={toggleWalletModal}>
+        <Button
+          variant="contained"
+          onClick={toggleWalletModal}
+          sx={{
+            borderRadius: "8px",
+            textTransform: "capitalize",
+            height: "40px",
+            lineHeight: "normal",
+            p: "8px 16px",
+            border: "1px solid rgba(255, 255, 255, 0.12)",
+            color: "rgb(236, 232, 227)",
+            background: "rgb(29, 26, 21)",
+            "&:hover": { background: "rgb(43, 42, 42)" },
+          }}
+        >
           Connect Wallet
         </Button>
       </>

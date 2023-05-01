@@ -27,6 +27,7 @@
     border: solid var(--wheel-color) 3px;
     border-radius: 50%;
     user-select: none;
+    margin-bottom: 70px;
   }
   
   /* Triangle de sélection = 1 rose +  1 blanc */
@@ -92,7 +93,7 @@
   }
   
   /* Element sur la roue */
-  .wheel-item {
+  .wheel-item, .wheel-item7 {
     display: block;
     position: absolute;
     box-sizing: border-box;
@@ -110,9 +111,13 @@
     padding: 0 25px 0 50px;
     font-family: var(--wheel-font);
   }
+
+  .wheel-item7 {
+    color : red
+  }
   
   /* Background de l'élément = triangle rose plus clair */
-  .wheel-item:before {
+  .wheel-item:before, .wheel-item7::before {
     content: ' ';
     display: block;
     position: absolute;
@@ -141,3 +146,7 @@
     border-right: solid var(--neutral-color) calc(var(--wheel-size) / 2);
   }
   
+  .wheel-item7::before {
+    opacity: 1;
+    border-right: solid gold calc(var(--wheel-size) / 2);
+  }

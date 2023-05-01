@@ -13,34 +13,28 @@ import TicketManagement from "./components/TicketManagement";
 import { useWeb3React } from "@web3-react/core";
 import { IReduxState } from "store/slice/state.interface";
 import { getStakedNfts } from "store/slice/nft-slice";
-
+import { Redirect, useHistory } from "react-router-dom";
 
 interface IHome {
   messages : Array<string>
 }
 
 const Home = ({messages} : IHome) => {
-  const stakedNfts = useSelector<IReduxState, Array<{collection : string, tokenId : number, newtrons : number, protons : number, mp : number, stakedTimeStamp : number, claimedTimeStamp : number, claimable : boolean}>>(state => {
+  const history = useHistory();
+  const stakedNfts = useSelector<IReduxState, Array<{collection : string, nftName : string, tokenId : number, newtrons : number, protons : number, mp : number, stakedTimeStamp : number, claimedTimeStamp : number, claimable : boolean}>>(state => {
     if (state.nft) {
       return state.nft.StakedNfts;
     }
     return [];
   });
 
-  // const stakedNfts = useSelector<IReduxState, Array<{collection : string, tokenId : number, newtrons : number, protons : number, mp : number, stakedTimeStamp : number, claimedTimeStamp : number, claimable : boolean}>>(state => {
-  //   if (state.nft) {
-  //     return state.nft.stak;
-  //   }
-  //   return [];
-  // });
-
-  let recentNfts = stakedNfts.slice().sort((a, b) => a.stakedTimeStamp - b.stakedTimeStamp);
+  let currentNfts = stakedNfts.slice().sort((a, b) => a.stakedTimeStamp - b.stakedTimeStamp);
 
   let rareNfts = stakedNfts.slice().sort((a, b) => a.mp - b.mp);
   if (rareNfts.length > 10) rareNfts = rareNfts.slice(0, 10);
 
   return (
-    <Box sx={{ backgroundColor: "common.black" }}>
+    <Box>
       <Container maxWidth="xl" sx={{ py: "24px" }}>
         <Banner />
         <Typography
@@ -48,10 +42,12 @@ const Home = ({messages} : IHome) => {
           textAlign="center"
           fontFamily="Audiowide"
           color="white"
+          maxWidth="720px"
           sx={{
             fontSize: { xs: "20px", md: "28px" },
             mt: "36px",
             mb: "24px",
+            mx: 'auto'
           }}
         >
           Stake Popular Tron NFT's to Mine Neutron & Proton Tokens!
@@ -64,12 +60,25 @@ const Home = ({messages} : IHome) => {
             mb: "36px",
           }}
         >
-          <Button variant="contained" color="primary">
+          <Button 
+            variant="contained"
+            sx={{
+              background: "rgb(29, 26, 21)",
+              border: "1px solid rgba(255, 255, 255, 0.12)",
+              borderRadius: "8px",
+              height: "44px",
+              color: "rgb(236, 232, 227)",
+              padding: "16px 26px",
+              lineHeight: "normal",
+              "&:hover": { background: "rgb(43, 42, 42)" }
+            }}
+            onClick={() => history.push('/stake')}
+          >
             Stake NFT's
           </Button>
         </Box>
-        <ActionFeed nfts = {rareNfts} messages={messages}/>
-        <ActionList nfts = {recentNfts}/>
+        <ActionFeed rareNfts = {rareNfts} currentNfts={currentNfts} messages={messages}/>
+        <ActionList /> 
       </Container>
       <AboutUs />
       <GrandDesign />

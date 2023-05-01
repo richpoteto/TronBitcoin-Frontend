@@ -78,7 +78,7 @@ const StakeInfo = ({globalNfts, userNfts} : IStakeInfo) => {
             </Box>
             <Box className="card-info-item">
               <Typography className="card-info-item-title">
-                Total Neutron Mined
+                Total Proton Mined
               </Typography>
               <Typography
                 className="card-info-item-value"
@@ -89,7 +89,7 @@ const StakeInfo = ({globalNfts, userNfts} : IStakeInfo) => {
             </Box>
             <Box className="card-info-item">
               <Typography className="card-info-item-title">
-                Total Proton Mined
+                Total Newtron Mined
               </Typography>
               <Typography
                 className="card-info-item-value"

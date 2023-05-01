@@ -17,10 +17,6 @@ interface IStake {
 }
 
 const Stake = ({messages} : IStake) => {
-
-
-  const { account } = useWeb3React();
-
   const stakedCounts = useSelector<IReduxState, number>(state => {
     if (state.nft) {
       return state.nft.stakedCounts;
@@ -28,14 +24,14 @@ const Stake = ({messages} : IStake) => {
     return 0;
   });
 
-  const StakedNftsFromUser = useSelector<IReduxState, Array<{ collection: string, tokenId: number, newtrons: number, protons: number, mp: number, stakedTimeStamp: number, claimedTimeStamp: number, claimable: boolean }>>(state => {
+  const StakedNftsFromUser = useSelector<IReduxState, Array<{ collection: string, nftName : string, tokenId: number, newtrons: number, protons: number, mp: number, stakedTimeStamp: number, claimedTimeStamp: number, claimable: boolean }>>(state => {
     if (state.nft) {
       return state.nft.StakedNftsFromUser;
     }
     return [];
   });
 
-  const whiteLists = useSelector<IReduxState, Array<[number, string, boolean, number, string]>>(
+  const whiteLists = useSelector<IReduxState, Array<[number, string, boolean, number, string, string]>>(
     (state) => state.nft.whiteLists
   );
 

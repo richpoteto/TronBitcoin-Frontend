@@ -4,6 +4,9 @@ import { useDispatch } from "react-redux";
 import { AppDispatch } from "state";
 import { setNftVariables } from "store/slice/nft-slice";
 import { notification } from "utils/notification";
+import { Box, Typography } from "@mui/material";
+import { useSelector } from "react-redux";
+import { IReduxState } from "store/slice/state.interface";
 
 const spins = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
 
@@ -31,6 +34,13 @@ const Wheel = ({ spinNumber, spinSuccess, opportunites, spinNft }: IWheel) => {
   const action = () => {
     dispatch(setNftVariables({ spinSuccess: false }));
   };
+
+  const userInfo = useSelector<
+    IReduxState,
+    { newtrons: number; protons: number; spins: number }
+  >((state) => {
+    return state.nft.userInfo;
+  });
 
   const selectItem = () => {
     if (!selectedItem) {
@@ -72,12 +82,11 @@ const Wheel = ({ spinNumber, spinSuccess, opportunites, spinNft }: IWheel) => {
       <div
         className={`wheel ${selectedItem ? "spinning" : ""}`}
         style={{ "--nb-item": 10, "--selected-item": selectedItem } as CustomCSSProperties2}
-        onClick={handleClick}
       >
         {
           spins.map((spin, index) =>
             <div
-              className="wheel-item"
+              className={index !== 6 ? "wheel-item" : "wheel-item7"}
               key={index}
               style={{ "--item-nb": index } as CustomCSSProperties1}
             >
@@ -86,6 +95,40 @@ const Wheel = ({ spinNumber, spinSuccess, opportunites, spinNft }: IWheel) => {
           )
         }
       </div>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          cursor: 'pointer',
+          marginTop : "20px"
+        }}
+        onClick={handleClick}
+      >
+        <Box
+          className="spin-action"
+          borderRadius="8px"
+          fontSize="24px"
+          color="white"
+          sx={{
+            backgroundColor: "rgb(255, 184, 0)",
+            width: '200px',
+            marginRight: "20px"
+          }}
+        >
+          Spin
+        </Box>
+        <Typography
+          component="div"
+          color= {
+            userInfo.spins ? "primary.light" : "red"
+          }
+          fontSize="40px"
+          sx={{display : 'flex', alignItems : 'center'}}
+        >
+          {userInfo.spins}
+        </Typography>
+      </Box>
     </div>
   );
 };

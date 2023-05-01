@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { NavLink } from "react-router-dom";
 import { useHistory } from "react-router-dom";
 import {
   AppBar,
@@ -11,12 +12,14 @@ import {
   Container,
   Tooltip,
 } from "@mui/material";
+
+import useResponsive from "../../hooks/useResponsive";
 import MenuIcon from "@mui/icons-material/Menu";
 import TelegramIcon from "@mui/icons-material/Telegram";
 import TwitterIcon from "@mui/icons-material/Twitter";
-
 import DiscordIcon from "assets/images/discord-brands.svg";
 import LogoImage from "assets/images/logo.png";
+import MobileLogoImage from "assets/images/mobile_logo.png";
 import "./header.scss";
 
 import Web3Status from "components/Web3Status";
@@ -54,7 +57,7 @@ const menuLists = [
 
 const Header = () => {
   const history = useHistory();
-
+  const isMobile = useResponsive("down", "sm");
   const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
 
   const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
@@ -74,24 +77,22 @@ const Header = () => {
     <AppBar
       position="static"
       className="appbar"
-      sx={{ backgroundColor: "common.black" }}
+      sx={{ backgroundColor: "black" }}
     >
       <Container maxWidth="xl">
         <Toolbar
           disableGutters
           sx={{ justifyContent: "space-between", columnGap: "8px" }}
         >
-          <Link href="/" className="logo">
-            <Box component="img" src={LogoImage} alt="logo" />
+          <Link component={NavLink} to="/" underline="none" height="48px">
+            <Box
+              component="img"
+              src={isMobile ? MobileLogoImage : LogoImage}
+              width={isMobile ? "60px" : "160px"}
+              height="100%"
+              alt="logo"
+            />
           </Link>
-          {/* <Box
-            className="stakedInfo"
-            sx={{ display: { xs: "none", md: "block" } }}
-          >
-            108 NFT's Staked
-            <br />
-            in Mining Round 1
-          </Box> */}
 
           <Box sx={{ display: "flex", alignItems: "center", columnGap: "8px" }}>
             <Box
@@ -104,7 +105,11 @@ const Header = () => {
                 rel="noreferrer"
                 className="social-button"
                 variant="contained"
-                color="primary"
+                sx={{
+                  background: "rgb(29, 26, 21)",
+                  border: "1px solid rgba(255, 255, 255, 0.12)",
+                  '&:hover': {background: "rgb(43, 42, 42)"}                  
+                }}
               >
                 <TwitterIcon sx={{ color: "#fff" }} />
               </Button>
@@ -114,7 +119,11 @@ const Header = () => {
                 rel="noreferrer"
                 className="social-button"
                 variant="contained"
-                color="primary"
+                sx={{
+                  background: "rgb(29, 26, 21)",
+                  border: "1px solid rgba(255, 255, 255, 0.12)",
+                  '&:hover': {background: "rgb(43, 42, 42)"}                  
+                }}
               >
                 <TelegramIcon sx={{ color: "#fff" }} />
               </Button>
@@ -124,7 +133,11 @@ const Header = () => {
                 rel="noreferrer"
                 className="social-button"
                 variant="contained"
-                color="primary"
+                sx={{
+                  background: "rgb(29, 26, 21)",
+                  border: "1px solid rgba(255, 255, 255, 0.12)",
+                  '&:hover': {background: "rgb(43, 42, 42)"}                  
+                }}
               >
                 <Box component="img" src={DiscordIcon} alt="" />
               </Button>
@@ -135,7 +148,10 @@ const Header = () => {
                 onClick={handleOpenUserMenu}
                 className="menu-button"
                 variant="contained"
-                color="primary"
+                sx={{                  
+                  border: "1px solid rgba(255, 255, 255, 0.12)",
+                  '&:hover': {background: "rgb(43, 42, 42)"}                  
+                }}
               >
                 <MenuIcon sx={{ color: "#fff" }} />
               </Button>

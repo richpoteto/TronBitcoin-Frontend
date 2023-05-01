@@ -29,7 +29,7 @@ const Step = ({
         <Typography
           variant="h3"
           className="step-info-title"
-          color="secondary.main"
+          color="rgb(255, 184, 0)"
         >
           {title}
         </Typography>

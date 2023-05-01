@@ -5,8 +5,8 @@ const AboutUs = () => {
   return (
     <Box
       sx={{
-        p: "80px 24px",
-        backgroundColor: "primary.main",
+        py: "20px",
+        backgroundColor: "transparent",
       }}
     >
       <Container maxWidth="xl">
@@ -15,23 +15,23 @@ const AboutUs = () => {
           fontFamily="Audiowide"
           mb="20px"
           textAlign="center"
-          sx={{ fontSize: { xs: "24px", md: "40px" } }}
+          color="white"
+          sx={{ fontSize: { xs: "24px", md: "28px" } }}
         >
           Neutron the Bitcoin of Tron NFT's
         </Typography>
-
         <Typography
           variant="h4"
           fontFamily="Audiowide"
           fontWeight="600"
           mb="16px"
           color="secondary.main"
-          sx={{ fontSize: { xs: "20px", md: "24px" } }}
+          sx={{ fontSize: { xs: "16px", md: "20px" } }}
         >
           About Us:
         </Typography>
 
-        <Typography variant="inherit" mb="16px">
+        <Typography variant="inherit" mb="16px" color="rgb(169, 168, 166)">
           Neutron was created to fill a gap in the Tron NFT space. In most NFT
           projects users take all the risk up front purchasing expensive NFTs
           and waiting for that project to build some utility. We wanted to build
@@ -57,7 +57,7 @@ const AboutUs = () => {
         <Typography variant="inherit" fontWeight="600" color="secondary.main">
           No Marketing Supply
         </Typography>
-        <Typography variant="inherit" mt="16px">
+        <Typography variant="inherit" mt="16px" color="rgb(169, 168, 166)">
           It's what comes next that excites us the most! Each token on the
           Neutron platform has its utility! Some we can explain now and other
           utilities will have to wait! People have been asking us why do you

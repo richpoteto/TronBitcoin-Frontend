@@ -8,13 +8,13 @@ const GrandDesign = () => {
         <Typography
           variant="h3"
           fontFamily="Audiowide"
-          mb="20px"
+          mb="12px"
           color="white"
-          sx={{ fontSize: { xs: "32px", md: "44px" } }}
+          sx={{ fontSize: { xs: "24px", md: "28px" } }}
         >
           The Grand Design
         </Typography>
-        <Typography variant="inherit" fontSize="18px" color="white">
+        <Typography variant="inherit" fontSize="16px" color="rgb(169, 168, 166)">
           The Large Hadron Collider wasn't built in a day!
         </Typography>
       </Container>
