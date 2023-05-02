@@ -13,6 +13,8 @@ import { IReduxState } from "store/slice/state.interface";
 import { useWeb3React } from "@web3-react/core";
 
 import TronIcon from "../../../../assets/images/tron.png";
+import { getDayFromTimestamp, getDifference, getHourFromTimestamp } from "utils/getDate";
+import { notification } from "utils/notification";
 
 interface IMining {
   messages: Array<string>;
@@ -22,11 +24,15 @@ const Mining = ({ messages }: IMining) => {
 
   const [spins, setSpins] = useState<Array<number>>([]);
 
+  const [claimdays, setClaimDays] = useState(0);
+
+  const [withdrawdays, setWithdrawDays] = useState(0);
+
   const { account } = useWeb3React();
 
   const userInfo = useSelector<
     IReduxState,
-    { newtrons: number; protons: number; spins: number }
+    { newtrons: number; protons: number; spins: number, withdrawTime: number }
   >((state) => {
     return state.nft.userInfo;
   });
@@ -43,10 +49,76 @@ const Mining = ({ messages }: IMining) => {
     return state.nft.status
   });
 
+  const StakedNftsFromUser = useSelector<IReduxState, Array<{ collection: string, nftName: string, tokenId: number, newtrons: number, protons: number, mp: number, stakedTimeStamp: number, claimedTimeStamp: number, claimable: boolean }>>(state => {
+    if (state.nft) {
+      return state.nft.StakedNftsFromUser;
+    }
+    return [];
+  });
+
+  const startTime: number = useSelector<IReduxState, number>(
+    (state) => state.nft.startTime
+  );
+
+  useEffect(() => {
+    const updateDaysAndLog = () => {
+      setWithdrawDays(getDifference(startTime, userInfo.withdrawTime));
+    };
+
+    updateDaysAndLog();
+
+    const timer = setInterval(updateDaysAndLog, 4 * 60 * 1000);
+
+    return () => {
+      clearInterval(timer);
+    }
+  }, [userInfo.withdrawTime]);
+
+  useEffect(() => {
+    if (StakedNftsFromUser.length) {
+      const closest = StakedNftsFromUser.slice().sort((a, b) => a.claimedTimeStamp - b.claimedTimeStamp);
+
+      const updateDaysAndLog = () => {
+        setClaimDays(getDifference(startTime, closest[0].claimedTimeStamp));
+      };
+
+      updateDaysAndLog();
+
+      const timer = setInterval(updateDaysAndLog, 4 * 60 * 1000);
+
+      return () => {
+        clearInterval(timer);
+      }
+    }
+  }, [StakedNftsFromUser]);
+
+  function checkClaimableAll() {
+    let claimableNfts : any[] = [];
+
+    if (StakedNftsFromUser.length) {
+      StakedNftsFromUser.map((nft, i) => {
+        if (!getDifference(startTime, nft.claimedTimeStamp)) {
+          notification({ title: 'Early claim token ' + nft.tokenId, type: 'warning' });
+        } else {
+          claimableNfts.push({collection : nft.collection, tokenId : nft.tokenId});
+        }
+      })
+      if (claimableNfts.length) return claimableNfts;
+    }
+
+    notification({ title: 'No nfts to claim!', type: 'danger' });
+    return [];
+  }
+
   async function _claimAll() {
+    const claimableNfts = checkClaimableAll();
+
+    if (!claimableNfts.length) return;
+
     await dispatch(
       claimAll({
         walletAddress: account,
+        claimableNfts
       })
     );
   }
@@ -67,9 +139,6 @@ const Mining = ({ messages }: IMining) => {
     );
   }
 
-  // const handleSpinChange = (newSpinValue : number) => {
-  //   setSpin(newSpinValue);
-  // }
 
   useEffect(() => {
     const prevSpins = localStorage.getItem("spins");
@@ -77,12 +146,6 @@ const Mining = ({ messages }: IMining) => {
       setSpins(JSON.parse(prevSpins));
     }
   }, []);
-
-  // useEffect(() => {
-  //   if (spinSuccess) {
-  //     setSpinActive(spinSuccess);
-  //   }
-  // }, [spinSuccess])
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -273,12 +336,12 @@ const Mining = ({ messages }: IMining) => {
                   </Button>
                   <Typography
                     fontSize="14px"
-                    color="error.main"
+                    color={claimdays > 3 ? "red" : "green"}
                     fontWeight="600"
                     textAlign="center"
                     mt="4px"
                   >
-                    -3h
+                    {claimdays}   days
                   </Typography>
                 </Box>
                 <Box
@@ -353,7 +416,7 @@ const Mining = ({ messages }: IMining) => {
                     textAlign="center"
                     mt="4px"
                   >
-                    2d 3h
+                    {withdrawdays}
                   </Typography>
                 </Box>
               </Box>

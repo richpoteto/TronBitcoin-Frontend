@@ -23,6 +23,26 @@ const getTronAddress = (address: string) => {
   return tronWeb.address.fromHex(address);
 }
 
+
+interface IGetStartTime { }
+
+export const getStartTime = createAsyncThunk(
+  'nft/getstarttime',
+  async ({ }: IGetStartTime) => {
+    let mainContract;
+    if (window) {
+      if (window.tronWeb && window.tronWeb.defaultAddress.base58) {
+        mainContract = await window.tronWeb.contract().at(tronWeb.address.toHex(ShataTestnet.MAIN_ADDRESS));
+      }
+    }
+
+    const startTime = await mainContract.startTime().call();
+
+    return {
+      startTime: startTime.toNumber()
+    }
+  })
+
 interface IGetNftsCount { }
 
 export const getNftsCount = createAsyncThunk(
@@ -142,9 +162,9 @@ export const getUserInfo = createAsyncThunk(
         newtrons: status.newtrons.toNumber(),
         protons: status.protons.toNumber(),
         spins: status.spins.toNumber(),
+        withdrawTime: status.withdrawTime.toNumber()
       }
     };
-
   }
 );
 
@@ -345,7 +365,7 @@ export const getStakedNfts = createAsyncThunk(
       }
     }
 
-    let StakedNfts : any[] = [];
+    let StakedNfts: any[] = [];
 
     for (let i = 0; i < allStakedNfts.length; i++) {
       const nft = allStakedNfts[i];
@@ -548,7 +568,8 @@ export const claimNft = createAsyncThunk(
 );
 
 interface IclaimAll {
-  walletAddress: any
+  walletAddress: any,
+  claimableNfts : Array<{collection : string, tokenId : number}>
 }
 
 export const claimAll = createAsyncThunk(
@@ -556,7 +577,8 @@ export const claimAll = createAsyncThunk(
 
   async (
     {
-      walletAddress
+      walletAddress,
+      claimableNfts
     }: IclaimAll,
     { dispatch }
   ) => {
@@ -566,7 +588,7 @@ export const claimAll = createAsyncThunk(
 
         let enterTx, receipt = null, i = 0;
         try {
-          enterTx = await mainContract.claimNFTsFromUser(walletAddress).send({ feeLimit: 100000000 });
+          enterTx = await mainContract.claimMultiNfts(claimableNfts).send({ feeLimit: 100000000 });
 
           await new Promise((resolve) => setTimeout(resolve, 2000));
 
@@ -730,6 +752,7 @@ export const spinNft = createAsyncThunk(
 
 export interface ONftSlice {
   approve: Array<Boolean>,
+  startTime: number,
   mps: Array<Number>,
   stakedCounts: number,
   StakedNftsFromUser: Array<{ collection: string, nftName: string, tokenId: number, newtrons: number, protons: number, mp: number, stakedTimeStamp: number, claimedTimeStamp: number, claimable: boolean }>
@@ -737,7 +760,7 @@ export interface ONftSlice {
   rareNfts: Array<{ collection: string, tokenId: number, newtrons: number, protons: number, mp: number, stakedTimeStamp: number, claimedTimeStamp: number, claimable: boolean }>
   loading: Boolean;
   update: { approved: Boolean, staked: Boolean, claimed: Boolean, withdrawed: Boolean, spined: Boolean };
-  userInfo: { newtrons: number, protons: number, spins: number },
+  userInfo: { newtrons: number, protons: number, spins: number, withdrawTime: number },
   status: { totalNewTrons: number, totalProtons: number },
   whiteLists: Array<[number, string, boolean, number, string, string]>,
   spinNumber: number,
@@ -746,6 +769,7 @@ export interface ONftSlice {
 
 const initialState: ONftSlice = {
   approve: [],
+  startTime: 0,
   mps: [],
   stakedCounts: 0,
   StakedNftsFromUser: [],
@@ -753,7 +777,7 @@ const initialState: ONftSlice = {
   rareNfts: [],
   loading: false,
   update: { approved: false, staked: false, claimed: false, withdrawed: false, spined: false },
-  userInfo: { newtrons: 0, protons: 0, spins: 0 },
+  userInfo: { newtrons: 0, protons: 0, spins: 0, withdrawTime: 0 },
   status: { totalNewTrons: 0, totalProtons: 0 },
   whiteLists: [],
   spinNumber: 0,
@@ -771,16 +795,27 @@ const nftSlice = createSlice({
   extraReducers: builder => {
     builder
       /////////////
+      .addCase(getStartTime.pending, (state, action) => {
+        //state.loading = true;
+      })
+      .addCase(getStartTime.fulfilled, (state, action) => {
+        setAll(state, action.payload);
+        //state.loading = false;
+      })
+      .addCase(getStartTime.rejected, (state, { error }) => {
+        //state.loading = false;
+      })
+      /////////////
       .addCase(getNftsCount.pending, (state, action) => {
-        state.loading = true;
+        //state.loading = true;
 
       })
       .addCase(getNftsCount.fulfilled, (state, action) => {
         setAll(state, action.payload);
-        state.loading = false;
+        //state.loading = false;
       })
       .addCase(getNftsCount.rejected, (state, { error }) => {
-        state.loading = false;
+        //state.loading = false;
       })
 
       /////////////
@@ -857,14 +892,14 @@ const nftSlice = createSlice({
       })
       /////////////
       .addCase(getStakedNfts.pending, (state, action) => {
-        state.loading = true;
+        //state.loading = true;
       })
       .addCase(getStakedNfts.fulfilled, (state, action) => {
         setAll(state, action.payload);
-        state.loading = false;
+        //state.loading = false;
       })
       .addCase(getStakedNfts.rejected, (state, { error }) => {
-        state.loading = false;
+        //state.loading = false;
         console.log(error);
       })
       ////////////

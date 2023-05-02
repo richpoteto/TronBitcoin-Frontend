@@ -18,6 +18,7 @@ import {
   getNftsCount,
   getStakedNfts,
   getStakedNftsFromUser,
+  getStartTime,
   getStatus,
   getUserInfo,
   getWhilteLists,
@@ -61,6 +62,7 @@ function App() {
     let result = await dispatch(getStakedNfts({}));
     if (result.meta.requestStatus == "fulfilled") {
       dispatch(getNftsCount({}));
+      dispatch(getStartTime({}));
     }
   }
 

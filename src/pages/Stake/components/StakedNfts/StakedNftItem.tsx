@@ -5,68 +5,85 @@ import { useAddress, useWeb3Context } from "../../../../hooks";
 import { useWeb3React } from "@web3-react/core";
 import NftImage from "assets/images/item/1 snowman epiphany.png";
 import { claimNft, unStakeNft } from "store/slice/nft-slice";
-import { getDayFromTimestamp, getHourFromTimestamp } from "utils/getDate";
-import { useEffect, useRef, useState } from "react";
- type StakedNftItemProps = {
+import { getDayFromTimestamp, getDifference, getHourFromTimestamp } from "utils/getDate";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useSelector } from "react-redux";
+import { IReduxState } from "store/slice/state.interface";
+import { notification } from "utils/notification";
+type StakedNftItemProps = {
   stakedDate: number;
-  claimedDate : number;
+  claimedDate: number;
   address: string;
   id: number;
   mp: number;
   claimable: boolean;
   newtrons: number;
 };
- const StakedNftItem: React.FC<StakedNftItemProps> = ({ address, id, mp, claimable, stakedDate, claimedDate, newtrons }) => {
-  const [walletAddress, setWallet] = useState("");
-  const [disable, setDisable] = useState(false);
-  // const [claimResult, setClaimResult] = useState<any>(null);
-   const dispatch = useDispatch<AppDispatch>();
+const StakedNftItem: React.FC<StakedNftItemProps> = ({ address, id, mp, claimable, stakedDate, claimedDate, newtrons }) => {
+  const dispatch = useDispatch<AppDispatch>();
+
   const { account } = useWeb3React();
   const stakedDay = getDayFromTimestamp(stakedDate);
   const stakedHour = getHourFromTimestamp(stakedDate);
-  
+
   const claimedDay = getDayFromTimestamp(claimedDate);
   const claimedHour = getHourFromTimestamp(claimedDate);
 
-   useEffect(() => {
+  const startTime: number = useSelector<IReduxState, number>(
+    (state) => state.nft.startTime
+  );
+
+  const [days, setDays] = useState(0);
+
+  useEffect(() => {
     if (account && account !== "") {
-      setWallet(account);
+      const updateDaysAndLog = () => {
+        setDays(getDifference(startTime, claimedDate));
+      };
+
+      updateDaysAndLog();
+      
+      const timer = setInterval(updateDaysAndLog, 4 * 60 * 1000);
+      
+      return () => {
+        clearInterval(timer);
+      }
     }
   }, [account]);
-   async function _unStakeNft() {
+
+  async function _unStakeNft() {
+    const interval = getDifference(startTime, stakedDate);
+
+    if (!interval) {
+      notification({ title: "Early unstake", type: "danger" });
+    }
+
     await dispatch(
       unStakeNft({
         address,
-        walletAddress,
+        walletAddress: account,
         tokenId: id
       })
     )
   }
-   async function _claimNft() {
+
+  async function _claimNft() {
+    const interval = getDifference(startTime, claimedDate);
+
+    if (!interval) {
+      notification({ title: "Please claim 1 day later!", type: "danger" });
+    }
+
     await dispatch(
       claimNft({
         tokenId: id,
         address,
-        walletAddress
+        walletAddress: account
       })
     );
-    //setClaimResult(result);
   }
-  //  useEffect(() => {
-  //   if (claimResult && claimResult.meta.requestStatus === 'fulfilled') {
-  //     setDisable(true);
-  //   }
-  // }, [claimResult]);
-  
-  //  useEffect(() => {
-  //   if (disable) {
-  //     setTimeout(() => {
-  //         setDisable(false);
-  //     }, 4 * 60 * 1000);
-  //   }
-  // }, [disable]);
 
-   return (
+  return (
     <>
       <TableRow
         sx={{
@@ -119,14 +136,25 @@ import { useEffect, useRef, useState } from "react";
           <Typography color="white" fontSize="14px" mb="4px">
             Mined Tokens
           </Typography>
-          <Typography
-            color="success.main"
-            fontSize="16px"
-            fontFamily="Audiowide"
-            mb="8px"
-          >
-            {newtrons}
-          </Typography>
+          <Box sx={{ display: 'flex' }}>
+            <Typography
+              color="success.main"
+              fontSize="16px"
+              fontFamily="Audiowide"
+              mb="8px"
+              mr="30px"
+            >
+              {newtrons}
+            </Typography>
+            <Typography
+              color={days > 3 ? "red" : "blue"}
+              fontSize="16px"
+              fontFamily="Audiowide"
+              mb="8px"
+            >
+              {days} Days
+            </Typography>
+          </Box>
           <Box>
             <Button variant="contained" sx={{ mr: "8px" }} onClick={_unStakeNft}>
               Unstake
@@ -134,7 +162,7 @@ import { useEffect, useRef, useState } from "react";
             <Button
               variant="contained"
               onClick={_claimNft}
-              disabled={!claimable || disable}
+              //disabled={!claimable || disable}
               sx={{
                 "&.Mui-disabled": {
                   background: "gray",
@@ -159,4 +187,4 @@ import { useEffect, useRef, useState } from "react";
     </>
   );
 };
- export default StakedNftItem;
+export default StakedNftItem;

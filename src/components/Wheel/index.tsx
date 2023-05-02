@@ -95,13 +95,22 @@ const Wheel = ({ spinNumber, spinSuccess, opportunites, spinNft }: IWheel) => {
           )
         }
       </div>
+      <Typography
+          component="div"
+          color= "blue"
+          fontSize="15px"
+          sx={{textAlign : 'right'}}
+          mr="-15px"
+        >
+          Available Spins : 
+        </Typography>
       <Box
         sx={{
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
           cursor: 'pointer',
-          marginTop : "20px"
+
         }}
         onClick={handleClick}
       >
